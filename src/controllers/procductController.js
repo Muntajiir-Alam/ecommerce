@@ -3,7 +3,6 @@ import productModel from '../models/product.js';
 async function addProduct(req, res) {
     
     const { name, description, price, stock, category } = req.body;
-    console.log(name);
     
 
     const product = await productModel.create({

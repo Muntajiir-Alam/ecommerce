@@ -1,7 +1,23 @@
 import jwt from 'jsonwebtoken';
 
-async function authAdmin(req, res, next) {
-    const token = req.cookies.token;
+function getToken(req) {
+    const cookieToken = req.cookies?.token;
+    const authorization =
+        req.get?.('authorization') || req.headers?.authorization;
+
+    if (cookieToken) {
+        return cookieToken;
+    }
+
+    if (authorization?.startsWith('Bearer ')) {
+        return authorization.slice('Bearer '.length);
+    }
+
+    return null;
+}
+
+function auth(req, res, next) {
+    const token = getToken(req);
 
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -10,39 +26,15 @@ async function authAdmin(req, res, next) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        if (decoded.role !== 'admin') {
-            return res.status(403).json({ message: "You don't have access" });
+        if (typeof decoded !== 'object' || !decoded.id) {
+            return res.status(401).json({ message: 'Unauthorized' });
         }
 
         req.user = decoded;
-        next();
-    } catch (err) {
-        console.log(err);
+        return next();
+    } catch {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 }
 
-async function authUser(req, res, next) {
-    const token = req.cookies.token;
-
-    if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        if (decoded.role !== 'user') {
-            return res.status(403).json({ message: "You don't have access" });
-        }
-
-        req.user = decoded;
-
-        next();
-    } catch (err) {
-        console.log(err);
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
-}
-
-export { authAdmin, authUser };
+export { auth };

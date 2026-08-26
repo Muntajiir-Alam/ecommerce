@@ -1,25 +1,12 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import orderModel from '../models/order.js';
+import userModel from '../models/user.js';
 
 async function orderUser(req, res) {
 
-    /*
-    input: {
-        userId: String,
-        items: [
-            {
-                productId: String,
-                quantity: Number
-            }
-        ],
-        totalAmount: Number,
-        status: String
-    }
-    */
-
     const { userId, items , totalAmount, status} = req.body;
-
+    
     const user = await userModel.findById(userId);
 
     if (!user) {
@@ -37,7 +24,7 @@ async function orderUser(req, res) {
 }
 
 async function getOrders(req, res) {
-    const orders = await orderModel.find().populate('user').populate('items.product');
+    const orders = await orderModel.find().populate('user').populate('items.productId');
 
     res.status(200).json({ orders });
 }
@@ -45,7 +32,7 @@ async function getOrders(req, res) {
 async function getOrderById(req, res) {
     const { id } = req.params;
 
-    const order = await orderModel.findById(id).populate('user').populate('items.product');
+    const order = await orderModel.findById(id).populate('user').populate('items.productId');
 
     if (!order) {
         return res.status(404).json({ message: 'Order not found' });

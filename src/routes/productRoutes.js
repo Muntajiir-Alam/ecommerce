@@ -6,14 +6,15 @@ import {
     updateProduct,
     deleteProduct,
 } from '../controllers/procductController.js';
-import { authAdmin, authUser } from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js';
+import { role } from '../middleware/role.js';
 
 const router = express.Router();
 
-router.post('/',authAdmin, addProduct);
-router.get('/', authAdmin || authUser, getProducts);
-router.get('/:id', authAdmin, getProductById);
-router.patch('/:id', authAdmin, updateProduct);
-router.delete('/:id', authAdmin, deleteProduct);
+router.post('/', auth, role('admin'), addProduct);
+router.get('/', auth, role('admin', 'customer'), getProducts);
+router.get('/:id', auth, role('admin', 'customer'), getProductById);
+router.patch('/:id', auth, role('admin'), updateProduct);
+router.delete('/:id', auth, role('admin'), deleteProduct);
 
 export default router;
