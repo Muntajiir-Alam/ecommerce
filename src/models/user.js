@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-
+// add mongose validation
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
