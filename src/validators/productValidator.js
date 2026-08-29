@@ -12,10 +12,17 @@ async function validateResult(req, res, next) {
 */
 
 const addProductValidationRule = [
-body('name').isString().withMessage('Name must be a string'),
+    // change in multipart/form-data, we cannot validate the image file here, so we will handle it in the controller using multer
+    // for image, we will handle it in the controller using multer, so no need to validate it here
+    body('productImages').notEmpty().withMessage('Product images are required'),
+    body('name').isString().withMessage('Name must be a string'),
     body('description').isString().withMessage('Description must be a string'),
-    body('price').isFloat({ min: 0 }).withMessage('Price must be a non-negative number'),
-    body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
+    body('price')
+        .isFloat({ min: 0 })
+        .withMessage('Price must be a non-negative number'),
+    body('stock')
+        .isInt({ min: 0 })
+        .withMessage('Stock must be a non-negative integer'),
     body('category').isString().withMessage('Category must be a string'),
     validateResult,
 ];
@@ -28,10 +35,22 @@ const getProductByIdValidationRule = [
 const updateProductValidationRule = [
     param('id').isMongoId().withMessage('Invalid product ID'),
     body('name').optional().isString().withMessage('Name must be a string'),
-    body('description').optional().isString().withMessage('Description must be a string'),
-    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a non-negative number'),
-    body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
-    body('category').optional().isString().withMessage('Category must be a string'),
+    body('description')
+        .optional()
+        .isString()
+        .withMessage('Description must be a string'),
+    body('price')
+        .optional()
+        .isFloat({ min: 0 })
+        .withMessage('Price must be a non-negative number'),
+    body('stock')
+        .optional()
+        .isInt({ min: 0 })
+        .withMessage('Stock must be a non-negative integer'),
+    body('category')
+        .optional()
+        .isString()
+        .withMessage('Category must be a string'),
     validateResult,
 ];
 

@@ -1,11 +1,19 @@
 import productModel from '../models/product.js';
+import uploadFile from '../servise/img.storage.js';
 
 async function addProduct(req, res) {
-    
     const { name, description, price, stock, category } = req.body;
-    
+    const productImages = req.files.map((file) => file.buffer);
+
+    // upload images to ImageKit and get the URLs
+    const imageUrls = [];
+    for (const file of productImages) {
+        const result = await uploadFile(file.buffer.toString('base64'));
+        imageUrls.push(result);
+    }
 
     const product = await productModel.create({
+        imagesUrls: imageUrls,
         name,
         description,
         price,
@@ -63,4 +71,10 @@ async function deleteProduct(req, res) {
     res.status(200).json({ message: 'Product deleted successfully' });
 }
 
-export { addProduct, getProducts, getProductById, updateProduct, deleteProduct };
+export {
+    addProduct,
+    getProducts,
+    getProductById,
+    updateProduct,
+    deleteProduct,
+};

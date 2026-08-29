@@ -14,6 +14,11 @@ import {
     getProductByIdValidationRule,
     updateProductValidationRule,
 } from '../validators/productValidator.js';
+import multer from 'multer';
+
+const upload = multer({
+    storage: multer.memoryStorage()
+})
 
 const router = express.Router();
 
