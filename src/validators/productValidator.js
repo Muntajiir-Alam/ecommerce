@@ -12,9 +12,6 @@ async function validateResult(req, res, next) {
 */
 
 const addProductValidationRule = [
-    // change in multipart/form-data, we cannot validate the image file here, so we will handle it in the controller using multer
-    // for image, we will handle it in the controller using multer, so no need to validate it here
-    body('productImages').notEmpty().withMessage('Product images are required'),
     body('name').isString().withMessage('Name must be a string'),
     body('description').isString().withMessage('Description must be a string'),
     body('price')

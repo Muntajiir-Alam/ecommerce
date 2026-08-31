@@ -3,14 +3,40 @@ import uploadFile from '../servise/img.storage.js';
 
 async function addProduct(req, res) {
     const { name, description, price, stock, category } = req.body;
-    const productImages = req.files.map((file) => file.buffer);
+    const productImages = req.files ?? [];
 
-    // upload images to ImageKit and get the URLs
-    const imageUrls = [];
-    for (const file of productImages) {
-        const result = await uploadFile(file.buffer.toString('base64'));
-        imageUrls.push(result);
+    if (productImages.length === 0) {
+        return res
+            .status(400)
+            .json({ message: 'At least one product image is required' });
     }
+
+    let uploads;
+
+    try {
+        uploads = await Promise.all(
+            productImages.map((file, index) =>
+                uploadFile(
+                    file.buffer.toString('base64'),
+                    `product-${Date.now()}-${index}-${file.originalname}`
+                )
+            )
+        );
+    } catch (error) {
+        const status = Number.isInteger(error.status) ? error.status : 500;
+        const message = error.error?.message || error.message;
+
+        console.error('ImageKit upload failed:', {
+            status: error.status,
+            message,
+        });
+
+        return res.status(status).json({
+            message: `Image upload failed: ${message || 'Unknown ImageKit error'}`,
+        });
+    }
+
+    const imageUrls = uploads.map((upload) => upload.url);
 
     const product = await productModel.create({
         imagesUrls: imageUrls,
