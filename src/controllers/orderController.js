@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import orderModel from '../models/order.js';
 import userModel from '../models/user.js';
+import productModel from '../models/product.js';
 
 async function orderUser(req, res) {
     

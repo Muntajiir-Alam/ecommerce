@@ -32,4 +32,25 @@ const loginUserValidationRules = [
     validateResult,
 ];
 
-export { registerUserValidationRules, loginUserValidationRules };
+const resetPasswordValidationRules = [
+    body('email')
+        .isEmail()
+        .withMessage('Invalid email address')
+        .normalizeEmail(),
+    body('currentPassword')
+        .notEmpty()
+        .withMessage('Current password is required'),
+    body('newPassword')
+        .isLength({ min: 6 })
+        .withMessage('New password must be at least 6 characters long'),
+    body('confirmPassword')
+        .custom((value, { req }) => value === req.body.newPassword)
+        .withMessage('New and confirm password does not match'),
+    validateResult,
+];
+
+export {
+    registerUserValidationRules,
+    loginUserValidationRules,
+    resetPasswordValidationRules,
+};

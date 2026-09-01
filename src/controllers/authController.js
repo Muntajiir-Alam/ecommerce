@@ -1,6 +1,7 @@
 import userModel from '../models/user.js';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import tokenGen from '../helper/tokenGen.js';
+import hashGen from '../helper/hashGen.js';
 
 async function registerUser(req, res) {
     const { username, email, password, role = 'customer' } = req.body;
@@ -13,7 +14,7 @@ async function registerUser(req, res) {
         return res.status(409).json({ message: 'User already exists' });
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = hashGen(password);
 
     const user = await userModel.create({
         username,
@@ -22,13 +23,7 @@ async function registerUser(req, res) {
         role,
     });
 
-    const token = jwt.sign(
-        {
-            id: user._id,
-            role: user.role,
-        },
-        process.env.JWT_SECRET
-    );
+    const token = tokenGen(user);
 
     res.cookie('token', token);
 
@@ -60,13 +55,7 @@ async function loginUser(req, res) {
         return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
-        {
-            id: user._id,
-            role: user.role,
-        },
-        process.env.JWT_SECRET
-    );
+    const token = tokenGen(user);
 
     res.cookie('token', token);
 
@@ -86,4 +75,44 @@ async function logoutUser(req, res) {
     res.status(200).json({ message: 'User logged out successfully' });
 }
 
-export { registerUser, loginUser, logoutUser };
+async function resetPass(req, res) {
+    const { email, currentPassword, newPassword, confirmPassword } = req.body;
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+            message: 'New and confirm password does not match',
+        });
+    }
+
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password
+    );
+
+    if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    user.password = await hashGen(newPassword);
+    await user.save();
+
+    const token = tokenGen(user);
+    res.cookie('token', token);
+
+    res.status(200).json({
+        message: 'Reset password successfully',
+        user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+        },
+    });
+}
+
+export { registerUser, loginUser, logoutUser, resetPass };
