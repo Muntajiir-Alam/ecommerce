@@ -2,6 +2,35 @@ import userModel from '../models/user.js';
 import bcrypt from 'bcryptjs';
 import tokenGen from '../helper/tokenGen.js';
 import hashGen from '../helper/hashGen.js';
+import jwt from 'jsonwebtoken';
+
+async function getCurrentUser(req, res) {
+    if (!req.cookies?.token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const userId = jwt.verify(
+        req.cookies.token,
+        process.env.JWT_SECRET,
+        (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+            return decoded.id;
+        }
+    );
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+    });
+}
 
 async function registerUser(req, res) {
     const { username, email, password, role = 'customer' } = req.body;
@@ -115,4 +144,4 @@ async function resetPass(req, res) {
     });
 }
 
-export { registerUser, loginUser, logoutUser, resetPass };
+export { getCurrentUser, registerUser, loginUser, logoutUser, resetPass };
