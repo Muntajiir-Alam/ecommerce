@@ -1,8 +1,6 @@
+import orderModel from '../models/order.js';
+import productModel from '../models/product.js';
 import userModel from '../models/user.js';
-import bcrypt from 'bcryptjs';
-import tokenGen from '../helper/tokenGen.js';
-import hashGen from '../helper/hashGen.js';
-import jwt from 'jsonwebtoken';
 
 async function listUsers(req, res) {
     const page = parseInt(req.query.page) || 1;
@@ -73,14 +71,14 @@ async function banUser(req, res) {
 
 async function deleteUser(req, res) {
     const { id } = req.params;
-    // Implement logic to soft delete a user
-    res.status(200).json({ message: `Delete (soft delete) user ID: ${id}` });
+    const user = await userModel.findByIdAndDelete(id).select('-password');
+    res.status(200).json({ message: `Deleted user ID: ${id}`, data: user });
 }
 
 async function viewUserOrders(req, res) {
     const { id } = req.params;
-    // Implement logic to view a specific user's order history
-    res.status(200).json({ message: `View order history for user ID: ${id}` });
+    const orders = await orderModel.find({ user: id });
+    res.status(200).json({ message: `View order history for user ID: ${id}`, data: orders });
 }
 
 export {
