@@ -13,6 +13,9 @@ import {
     getUserDetailsValidationRules,
     getUserListValidationRules,
     updateUserRoleValidationRules,
+    banUserValidationRules,
+    deleteUserValidationRules,
+    viewUserOrdersValidationRules,
 } from '../validators/userValidator.js';
 
 const router = express.Router();
@@ -32,8 +35,20 @@ router.patch(
     role('admin'),
     updateUserRole
 );
-router.patch('/:id/ban', auth, role('admin'), banUser);
-router.delete('/:id', auth, role('admin'), deleteUser);
-router.get('/:id/orders', auth, role('admin'), viewUserOrders);
+router.patch('/:id/ban', banUserValidationRules, auth, role('admin'), banUser);
+router.delete(
+    '/:id',
+    deleteUserValidationRules,
+    auth,
+    role('admin'),
+    deleteUser
+);
+router.get(
+    '/:id/orders',
+    viewUserOrdersValidationRules,
+    auth,
+    role('admin'),
+    viewUserOrders
+);
 
 export default router;

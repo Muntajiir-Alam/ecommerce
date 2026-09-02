@@ -54,7 +54,9 @@ async function viewUserDetails(req, res) {
 async function updateUserRole(req, res) {
     const { id } = req.params;
     const { role } = req.body;
-    const user = await userModel.findByIdAndUpdate(id, { role }, { returnDocument: "after" }).select('-password');
+    const user = await userModel
+        .findByIdAndUpdate(id, { role }, { returnDocument: 'after' })
+        .select('-password');
     res.status(200).json({
         success: true,
         data: user,
@@ -63,8 +65,10 @@ async function updateUserRole(req, res) {
 
 async function banUser(req, res) {
     const { id } = req.params;
-    // Implement logic to ban/suspend a user
-    res.status(200).json({ message: `Ban/suspend user ID: ${id}` });
+    const user = await userModel
+        .findByIdAndUpdate(id, { isBanned: true }, { returnDocument: 'after' })
+        .select('-password');
+    res.status(200).json({ message: `Banned user ID: ${id}`, data: user });
 }
 
 async function deleteUser(req, res) {
