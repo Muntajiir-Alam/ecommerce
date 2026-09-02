@@ -7,7 +7,7 @@ import {
 } from '../validators/authValidator.js';
 
 const router = express.Router();
-router.post('/me', authController.getCurrentUser);
+router.get('/me', authController.getCurrentUser);
 router.post(
     '/register',
     registerUserValidationRules,
