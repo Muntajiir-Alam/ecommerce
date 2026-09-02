@@ -44,9 +44,10 @@ async function listUsers(req, res) {
 
 async function viewUserDetails(req, res) {
     const { id } = req.params;
-    // Implement logic to view single user details
+    const user = await userModel.findById(id).select('-password');
     res.status(200).json({
-        message: `View single user details for user ID: ${id}`,
+        success: true,
+        data: user,
     });
 }
 

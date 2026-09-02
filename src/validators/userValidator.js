@@ -32,4 +32,11 @@ const getUserListValidationRules = [
     validateResult,
 ];
 
-export { getUserListValidationRules };
+const getUserDetailsValidationRules = [
+    param('id')
+        .isMongoId()
+        .withMessage('Invalid user ID'),
+    validateResult,
+];
+
+export { getUserListValidationRules, getUserDetailsValidationRules };
