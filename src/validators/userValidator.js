@@ -39,4 +39,16 @@ const getUserDetailsValidationRules = [
     validateResult,
 ];
 
-export { getUserListValidationRules, getUserDetailsValidationRules };
+const updateUserRoleValidationRules = [
+    param('id')
+        .isMongoId()
+        .withMessage('Invalid user ID'),
+    body('role')
+        .isString()
+        .withMessage('Role must be a string')
+        .isIn(['admin', 'customer'])
+        .withMessage('Role must be either admin or customer'),
+    validateResult,
+];
+
+export { getUserListValidationRules, getUserDetailsValidationRules , updateUserRoleValidationRules };

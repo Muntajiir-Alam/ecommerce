@@ -54,9 +54,10 @@ async function viewUserDetails(req, res) {
 async function updateUserRole(req, res) {
     const { id } = req.params;
     const { role } = req.body;
-    // Implement logic to update a user's role
+    const user = await userModel.findByIdAndUpdate(id, { role }, { returnDocument: "after" }).select('-password');
     res.status(200).json({
-        message: `Update role for user ID: ${id} to ${role}`,
+        success: true,
+        data: user,
     });
 }
 

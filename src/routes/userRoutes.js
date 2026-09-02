@@ -12,6 +12,7 @@ import { auth } from '../middleware/auth.js';
 import {
     getUserDetailsValidationRules,
     getUserListValidationRules,
+    updateUserRoleValidationRules,
 } from '../validators/userValidator.js';
 
 const router = express.Router();
@@ -24,9 +25,15 @@ router.get(
     role('admin'),
     viewUserDetails
 );
-router.put('/:id/role', updateUserRole);
-router.put('/:id/ban', banUser);
-router.delete('/:id', deleteUser);
-router.get('/:id/orders', viewUserOrders);
+router.patch(
+    '/:id/role',
+    updateUserRoleValidationRules,
+    auth,
+    role('admin'),
+    updateUserRole
+);
+router.patch('/:id/ban', auth, role('admin'), banUser);
+router.delete('/:id', auth, role('admin'), deleteUser);
+router.get('/:id/orders', auth, role('admin'), viewUserOrders);
 
 export default router;
