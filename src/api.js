@@ -1,9 +1,8 @@
-import { loginUser } from "./controllers/authController";
+import { loginUser } from './controllers/authController';
 
 /* API Configuration */
 const baseUrl = 'http://localhost:3000/api';
 
-    
 // authentication
 const authRoutes = [
     {
@@ -11,8 +10,8 @@ const authRoutes = [
         type: 'POST',
         data: {
             email: '',
-            password: ''
-        }
+            password: '',
+        },
     },
     {
         route: '{baseUrl}/auth/register',
@@ -20,9 +19,9 @@ const authRoutes = [
         data: {
             username: '',
             email: '',
-            password: ''
-        }
-    }
+            password: '',
+        },
+    },
 ];
 
 // product
@@ -35,18 +34,18 @@ const productRoutes = [
             description: '',
             price: 0,
             category: '',
-            stock: 0
-        }
+            stock: 0,
+        },
     },
     {
         route: '{baseUrl}/product',
         type: 'GET',
-        data: {}
+        data: {},
     },
     {
         route: '{baseUrl}/product/:id',
         type: 'GET',
-        data: {}
+        data: {},
     },
     {
         route: '{baseUrl}/product/:id',
@@ -56,14 +55,14 @@ const productRoutes = [
             description: '',
             price: 0,
             category: '',
-            stock: 0
-        }
+            stock: 0,
+        },
     },
     {
         route: '{baseUrl}/product/:id',
         type: 'DELETE',
-        data: {}
-    }
+        data: {},
+    },
 ];
 
 // order
@@ -75,31 +74,31 @@ const orderRoutes = [
             userId: '',
             items: [],
             totalAmount: 0,
-            status: ''
-        }
+            status: '',
+        },
     },
     {
         route: '{baseUrl}/order',
         type: 'GET',
-        data: {}
+        data: {},
     },
     {
         route: '{baseUrl}/order/:id',
         type: 'GET',
-        data: {}
+        data: {},
     },
     {
         route: '{baseUrl}/order/:id',
         type: 'PATCH',
         data: {
-            status: ''
-        }
+            status: '',
+        },
     },
     {
         route: '{baseUrl}/order/:id',
         type: 'DELETE',
-        data: {}
-    }
+        data: {},
+    },
 ];
 
 export { baseUrl, authRoutes, productRoutes, orderRoutes };

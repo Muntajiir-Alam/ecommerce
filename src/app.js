@@ -16,6 +16,6 @@ app.use('/api/product', productRouter);
 app.use('/api/order', orderRouter);
 app.use('/api/user', userRouter);
 
-app.use(errorHandler)
+app.use(errorHandler);
 
 export default app;

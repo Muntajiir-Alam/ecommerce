@@ -1,6 +1,6 @@
-import  jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
-const tokenGen = (user)=>{
+const tokenGen = (user) => {
     return jwt.sign(
         {
             id: user._id,
@@ -8,6 +8,6 @@ const tokenGen = (user)=>{
         },
         process.env.JWT_SECRET
     );
-}
+};
 
 export default tokenGen;

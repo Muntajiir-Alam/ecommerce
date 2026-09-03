@@ -40,7 +40,13 @@ router.patch(
     updateUserRole
 );
 router.patch('/:id/ban', banUserValidationRules, auth, role('admin'), banUser);
-router.patch('/:id/unban', unbanUserValidationRules, auth, role('admin'), unbanUser);
+router.patch(
+    '/:id/unban',
+    unbanUserValidationRules,
+    auth,
+    role('admin'),
+    unbanUser
+);
 router.patch(
     '/:id/delete',
     deleteUserValidationRules,

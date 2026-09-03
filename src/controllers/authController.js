@@ -80,18 +80,17 @@ const loginUser = catchAsync(async (req, res, next) => {
         $or: [{ username }, { email }],
     });
 
-    
     if (!user) {
         return next(new AppError('Invalid credentials', 401));
     }
-    
+
     if (user.isDeleted) {
         return next(new AppError('User account is deleted', 403));
     }
     if (user.isBanned) {
         return next(new AppError('User account is banned', 403));
     }
-    
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
