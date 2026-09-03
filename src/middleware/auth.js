@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken';
+import AppError from '../utils/appError.js';
+import catchAsync from '../utils/catchAsync.js';
+import userModel from '../models/user.js';
 
-function getToken(req) {
+const getToken = (req) => {
     const cookieToken = req.cookies?.token;
     const authorization =
         req.get?.('authorization') || req.headers?.authorization;
@@ -14,27 +17,35 @@ function getToken(req) {
     }
 
     return null;
-}
+};
 
-function auth(req, res, next) {
+const auth = catchAsync(async (req, res, next) => {
     const token = getToken(req);
 
     if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        return next(new AppError('Unauthorized', 401));
     }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        if (typeof decoded !== 'object' || !decoded.id) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
-        req.user = decoded;
-        return next();
-    } catch {
-        return res.status(401).json({ message: 'Unauthorized' });
+    if (typeof decoded !== 'object' || !decoded.id) {
+        return next(new AppError('Unauthorized', 401));
     }
-}
+
+    const user = await userModel.findById(decoded.id);
+
+    if (!user) {
+        return next(new AppError('Unauthorized', 401));
+    }
+    if (user.isDeleted) {
+        return next(new AppError('User account is deleted', 403));
+    }
+    if (user.isBanned) {
+        return next(new AppError('User account is banned', 403));
+    }
+
+    req.user = user;
+    next();
+});
 
 export { auth };

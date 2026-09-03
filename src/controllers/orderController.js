@@ -1,23 +1,20 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import orderModel from '../models/order.js';
 import userModel from '../models/user.js';
 import productModel from '../models/product.js';
+import AppError from '../utils/appError.js';
+import catchAsync from '../utils/catchAsync.js';
 
-async function orderUser(req, res) {
-    
+const orderUser = catchAsync(async (req, res, next) => {
     const { userId, items, totalAmount, status } = req.body;
 
     const user = await userModel.findById(userId);
 
     if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return next(new AppError('User not found', 404));
     }
 
     if (!items || items.length === 0) {
-        return res
-            .status(400)
-            .json({ message: 'Order must contain at least one item' });
+        return next(new AppError('Order must contain at least one item', 400));
     }
 
     let totalAmountCalculated = 0;
@@ -29,15 +26,18 @@ async function orderUser(req, res) {
         const product = await productModel.findById(productId);
 
         if (!product) {
-            return res
-                .status(404)
-                .json({ message: `Product with ID ${productId} not found` });
+            return next(
+                new AppError(`Product with ID ${productId} not found`, 404)
+            );
         }
 
         if (product.stock < quantity) {
-            return res.status(400).json({
-                message: `Insufficient stock for product ${product.name}`,
-            });
+            return next(
+                new AppError(
+                    `Insufficient stock for product ${product.name}`,
+                    400
+                )
+            );
         }
 
         // Reduce stock
@@ -54,9 +54,9 @@ async function orderUser(req, res) {
     }
 
     if (totalAmountCalculated !== totalAmount) {
-        return res.status(400).json({
-            message: 'Total amount does not match calculated total',
-        });
+        return next(
+            new AppError('Total amount does not match calculated total', 400)
+        );
     }
 
     const order = await orderModel.create({
@@ -67,18 +67,18 @@ async function orderUser(req, res) {
     });
 
     res.status(201).json({ message: 'Order created successfully', order });
-}
+});
 
-async function getOrders(req, res) {
+const getOrders = catchAsync(async (req, res, next) => {
     const orders = await orderModel
         .find()
         .populate('user')
         .populate('items.productId');
 
     res.status(200).json({ orders });
-}
+});
 
-async function getOrderById(req, res) {
+const getOrderById = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
     const order = await orderModel
@@ -87,13 +87,13 @@ async function getOrderById(req, res) {
         .populate('items.productId');
 
     if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return next(new AppError('Order not found', 404));
     }
 
     res.status(200).json({ order });
-}
+});
 
-async function updateOrderStatus(req, res) {
+const updateOrderStatus = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { status } = req.body;
 
@@ -104,25 +104,25 @@ async function updateOrderStatus(req, res) {
     );
 
     if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return next(new AppError('Order not found', 404));
     }
 
     res.status(200).json({
         message: 'Order status updated successfully',
         order,
     });
-}
+});
 
-async function deleteOrder(req, res) {
+const deleteOrder = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
     const order = await orderModel.findByIdAndDelete(id);
 
     if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return next(new AppError('Order not found', 404));
     }
 
     res.status(200).json({ message: 'Order deleted successfully' });
-}
+});
 
 export { orderUser, getOrders, getOrderById, updateOrderStatus, deleteOrder };

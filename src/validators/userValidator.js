@@ -48,7 +48,17 @@ const banUserValidationRules = [
     validateResult,
 ];
 
+const unbanUserValidationRules = [
+    param('id').isMongoId().withMessage('Invalid user ID'),
+    validateResult,
+];
+
 const deleteUserValidationRules = [
+    param('id').isMongoId().withMessage('Invalid user ID'),
+    validateResult,
+];
+
+const restoreDeletedUserValidationRules = [
     param('id').isMongoId().withMessage('Invalid user ID'),
     validateResult,
 ];
@@ -63,6 +73,8 @@ export {
     getUserDetailsValidationRules,
     updateUserRoleValidationRules,
     banUserValidationRules,
+    unbanUserValidationRules,
     deleteUserValidationRules,
+    restoreDeletedUserValidationRules,
     viewUserOrdersValidationRules,
 };

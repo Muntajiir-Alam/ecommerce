@@ -4,7 +4,9 @@ import {
     viewUserDetails,
     updateUserRole,
     banUser,
+    unbanUser,
     deleteUser,
+    restoreDeletedUser,
     viewUserOrders,
 } from '../controllers/userController.js';
 import { role } from '../middleware/role.js';
@@ -14,7 +16,9 @@ import {
     getUserListValidationRules,
     updateUserRoleValidationRules,
     banUserValidationRules,
+    unbanUserValidationRules,
     deleteUserValidationRules,
+    restoreDeletedUserValidationRules,
     viewUserOrdersValidationRules,
 } from '../validators/userValidator.js';
 
@@ -36,12 +40,20 @@ router.patch(
     updateUserRole
 );
 router.patch('/:id/ban', banUserValidationRules, auth, role('admin'), banUser);
-router.delete(
-    '/:id',
+router.patch('/:id/unban', unbanUserValidationRules, auth, role('admin'), unbanUser);
+router.patch(
+    '/:id/delete',
     deleteUserValidationRules,
     auth,
     role('admin'),
     deleteUser
+);
+router.patch(
+    '/:id/restore',
+    restoreDeletedUserValidationRules,
+    auth,
+    role('admin'),
+    restoreDeletedUser
 );
 router.get(
     '/:id/orders',

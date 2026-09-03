@@ -3,10 +3,12 @@ import bcrypt from 'bcryptjs';
 import tokenGen from '../helper/tokenGen.js';
 import hashGen from '../helper/hashGen.js';
 import jwt from 'jsonwebtoken';
+import AppError from '../utils/appError.js';
+import catchAsync from '../utils/catchAsync.js';
 
-async function getCurrentUser(req, res) {
+const getCurrentUser = catchAsync(async (req, res, next) => {
     if (!req.cookies?.token) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        return next(new AppError('Unauthorized', 401));
     }
 
     const userId = jwt.verify(
@@ -14,7 +16,7 @@ async function getCurrentUser(req, res) {
         process.env.JWT_SECRET,
         (err, decoded) => {
             if (err) {
-                return res.status(401).json({ message: 'Unauthorized' });
+                return next(new AppError('Unauthorized', 401));
             }
             return decoded.id;
         }
@@ -22,7 +24,7 @@ async function getCurrentUser(req, res) {
 
     const user = await userModel.findById(userId);
     if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return next(new AppError('User not found', 404));
     }
     res.status(200).json({
         id: user._id,
@@ -30,9 +32,9 @@ async function getCurrentUser(req, res) {
         email: user.email,
         role: user.role,
     });
-}
+});
 
-async function registerUser(req, res) {
+const registerUser = catchAsync(async (req, res, next) => {
     const { username, email, password, role = 'customer' } = req.body;
 
     const isUserAlreadyExists = await userModel.findOne({
@@ -40,10 +42,10 @@ async function registerUser(req, res) {
     });
 
     if (isUserAlreadyExists) {
-        return res.status(409).json({ message: 'User already exists' });
+        return next(new AppError('User already exists', 409));
     }
 
-    const hash = hashGen(password);
+    const hash = await hashGen(password);
 
     const user = await userModel.create({
         username,
@@ -51,6 +53,10 @@ async function registerUser(req, res) {
         password: hash,
         role,
     });
+
+    if (!user) {
+        return next(new AppError('User registration failed', 500));
+    }
 
     const token = tokenGen(user);
 
@@ -65,23 +71,31 @@ async function registerUser(req, res) {
             role: user.role,
         },
     });
-}
+});
 
-async function loginUser(req, res) {
+const loginUser = catchAsync(async (req, res, next) => {
     const { username, email, password } = req.body;
 
     const user = await userModel.findOne({
         $or: [{ username }, { email }],
     });
 
+    
     if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return next(new AppError('Invalid credentials', 401));
     }
-
+    
+    if (user.isDeleted) {
+        return next(new AppError('User account is deleted', 403));
+    }
+    if (user.isBanned) {
+        return next(new AppError('User account is banned', 403));
+    }
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return next(new AppError('Invalid credentials', 401));
     }
 
     const token = tokenGen(user);
@@ -97,14 +111,14 @@ async function loginUser(req, res) {
             role: user.role,
         },
     });
-}
+});
 
-async function logoutUser(req, res) {
+const logoutUser = catchAsync(async (req, res, next) => {
     res.clearCookie('token');
     res.status(200).json({ message: 'User logged out successfully' });
-}
+});
 
-async function resetPass(req, res) {
+const resetPass = catchAsync(async (req, res, next) => {
     const { email, currentPassword, newPassword, confirmPassword } = req.body;
     if (newPassword !== confirmPassword) {
         return res.status(400).json({
@@ -115,7 +129,7 @@ async function resetPass(req, res) {
     const user = await userModel.findOne({ email });
 
     if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return next(new AppError('Invalid credentials', 401));
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -124,7 +138,7 @@ async function resetPass(req, res) {
     );
 
     if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return next(new AppError('Invalid credentials', 401));
     }
 
     user.password = await hashGen(newPassword);
@@ -142,6 +156,6 @@ async function resetPass(req, res) {
             role: user.role,
         },
     });
-}
+});
 
 export { getCurrentUser, registerUser, loginUser, logoutUser, resetPass };

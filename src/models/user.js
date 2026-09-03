@@ -27,7 +27,11 @@ const userSchema = new mongoose.Schema(
         isBanned: {
             type: Boolean,
             default: false,
-        }
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true }
 );

@@ -1,14 +1,16 @@
 import productModel from '../models/product.js';
 import uploadFile from '../servise/img.storage.js';
+import AppError from '../utils/appError.js';
+import catchAsync from '../utils/catchAsync.js';
 
-async function addProduct(req, res) {
+const addProduct = catchAsync(async (req, res, next) => {
     const { name, description, price, stock, category } = req.body;
     const productImages = req.files ?? [];
 
     if (productImages.length === 0) {
-        return res
-            .status(400)
-            .json({ message: 'At least one product image is required' });
+        return next(
+            new AppError('At least one product image is required', 400)
+        );
     }
 
     let uploads;
@@ -31,9 +33,12 @@ async function addProduct(req, res) {
             message,
         });
 
-        return res.status(status).json({
-            message: `Image upload failed: ${message || 'Unknown ImageKit error'}`,
-        });
+        return next(
+            new AppError(
+                `Image upload failed: ${message || 'Unknown ImageKit error'}`,
+                status
+            )
+        );
     }
 
     const imageUrls = uploads.map((upload) => upload.url);
@@ -48,27 +53,31 @@ async function addProduct(req, res) {
     });
 
     res.status(201).json({ message: 'Product added successfully', product });
-}
+});
 
-async function getProducts(req, res) {
+const getProducts = catchAsync(async (req, res, next) => {
     const products = await productModel.find();
 
-    res.status(200).json({ products });
-}
+    if (!products || products.length === 0) {
+        return next(new AppError('No products found', 404));
+    }
 
-async function getProductById(req, res) {
+    res.status(200).json({ products });
+});
+
+const getProductById = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
     const product = await productModel.findById(id);
 
     if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        return next(new AppError('Product not found', 404));
     }
 
     res.status(200).json({ product });
-}
+});
 
-async function updateProduct(req, res) {
+const updateProduct = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { name, description, price, stock, category } = req.body;
 
@@ -79,23 +88,23 @@ async function updateProduct(req, res) {
     );
 
     if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        return next(new AppError('Product not found', 404));
     }
 
     res.status(200).json({ message: 'Product updated successfully', product });
-}
+});
 
-async function deleteProduct(req, res) {
+const deleteProduct = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
     const product = await productModel.findByIdAndDelete(id);
 
     if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        return next(new AppError('Product not found', 404));
     }
 
     res.status(200).json({ message: 'Product deleted successfully' });
-}
+});
 
 export {
     addProduct,
