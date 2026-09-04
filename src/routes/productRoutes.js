@@ -5,7 +5,7 @@ import {
     getProductById,
     updateProduct,
     deleteProduct,
-} from '../controllers/procductController.js';
+} from '../controllers/productController.js';
 import { auth } from '../middleware/auth.js';
 import { role } from '../middleware/role.js';
 import {
