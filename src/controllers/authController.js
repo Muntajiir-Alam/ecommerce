@@ -255,6 +255,7 @@ const refreshToken = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
         message: 'Token refreshed successfully',
+        accessToken: newAccessToken,
         user: {
             id: user._id,
             username: user.username,
