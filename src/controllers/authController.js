@@ -233,6 +233,14 @@ const refreshToken = catchAsync(async (req, res, next) => {
         return next(new AppError('User not found', 404));
     }
 
+    if (
+        user.refreshToken !== refreshTokenFromCookie ||
+        !user.refreshToken ||
+        new Date(decoded.exp * 1000) < new Date()
+    ) {
+        return next(new AppError('Unauthorized', 401));
+    }
+
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
