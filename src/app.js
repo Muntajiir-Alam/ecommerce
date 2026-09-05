@@ -1,14 +1,20 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
+
 import authRouter from './routes/authRoutes.js';
 import productRouter from './routes/productRoutes.js';
 import orderRouter from './routes/orderRoutes.js';
 import userRouter from './routes/userRoutes.js';
+
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
 
+app.use(helmet());
+app.use(mongoSanitize());
 app.use(express.json());
 app.use(cookieParser());
 
