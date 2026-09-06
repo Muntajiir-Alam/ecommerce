@@ -1,5 +1,5 @@
 import productModel from '../models/product.js';
-import uploadFile from '../servise/img.storage.js';
+import uploadFile from '../service/img.storage.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 

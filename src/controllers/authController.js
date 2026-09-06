@@ -3,16 +3,21 @@ import bcrypt from 'bcryptjs';
 import {
     generateRefreshToken,
     generateAccessToken,
-} from '../helper/genrateTokens.js';
+} from '../helper/generateTokens.js';
 import hashGen from '../helper/hashGen.js';
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
+import logger from '../utils/logger.js';
+import AppResponse from '../utils/appResponse.js';
 
 const getCurrentUser = catchAsync(async (req, res, next) => {
+    logger.info('Fetching current user information');
+
     const accessToken = req.cookies?.accessToken;
 
     if (!accessToken) {
+        logger.warn('Access token not found in cookies');
         return next(new AppError('Unauthorized', 401));
     }
 
@@ -20,14 +25,16 @@ const getCurrentUser = catchAsync(async (req, res, next) => {
     try {
         decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
     } catch (err) {
+        logger.warn('Invalid access token');
         return next(new AppError('Unauthorized', 401));
     }
 
     const user = await userModel.findById(decoded.id);
     if (!user) {
+        logger.warn('User not found');
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({
+    AppResponse.success(res, 'Current user fetched successfully', {
         id: user._id,
         username: user.username,
         email: user.email,
@@ -36,6 +43,7 @@ const getCurrentUser = catchAsync(async (req, res, next) => {
 });
 
 const registerUser = catchAsync(async (req, res, next) => {
+    logger.info('Registering new user');
     const { username, email, password, role = 'customer' } = req.body;
 
     const isUserAlreadyExists = await userModel.findOne({
@@ -43,6 +51,7 @@ const registerUser = catchAsync(async (req, res, next) => {
     });
 
     if (isUserAlreadyExists) {
+        logger.warn('User already exists');
         return next(new AppError('User already exists', 409));
     }
 
@@ -56,6 +65,7 @@ const registerUser = catchAsync(async (req, res, next) => {
     });
 
     if (!user) {
+        logger.error('Failed to create user');
         return next(new AppError('User registration failed', 500));
     }
 
@@ -79,18 +89,21 @@ const registerUser = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    res.status(201).json({
-        message: 'User registered successfully',
-        user: {
+    AppResponse.success(
+        res,
+        'User registered successfully',
+        {
             id: user._id,
             username: user.username,
             email: user.email,
             role: user.role,
         },
-    });
+        201
+    );
 });
 
 const loginUser = catchAsync(async (req, res, next) => {
+    logger.info('Logging in user');
     const { username, email, password } = req.body;
 
     const user = await userModel.findOne({
@@ -98,28 +111,34 @@ const loginUser = catchAsync(async (req, res, next) => {
     });
 
     if (!user) {
+        logger.warn('User not found');
         return next(new AppError('Invalid credentials', 401));
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+        logger.warn('Invalid credentials');
         return next(new AppError('Invalid credentials', 401));
     }
 
     if (user.isDeleted) {
+        logger.warn('User account is deleted');
         return next(new AppError('User account is deleted', 403));
     }
     if (user.isBanned) {
+        logger.warn('User account is banned');
         return next(new AppError('User account is banned', 403));
     }
 
     const accessToken = generateAccessToken(user);
     if (!accessToken) {
+        logger.error('Failed to generate access token');
         return next(new AppError('Failed to generate access token', 500));
     }
     const refreshToken = generateRefreshToken(user);
     if (!refreshToken) {
+        logger.error('Failed to generate refresh token');
         return next(new AppError('Failed to generate refresh token', 500));
     }
 
@@ -140,26 +159,26 @@ const loginUser = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    res.status(200).json({
-        message: 'User logged in successfully',
-        user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-        },
+    AppResponse.success(res, 'User logged in successfully', {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
     });
 });
 
 const logoutUser = catchAsync(async (req, res, next) => {
+    logger.info('Logging out user');
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-    res.status(200).json({ message: 'User logged out successfully' });
+    AppResponse.success(res, 'User logged out successfully');
 });
 
 const resetPass = catchAsync(async (req, res, next) => {
+    logger.info('Resetting user password');
     const { email, currentPassword, newPassword, confirmPassword } = req.body;
     if (newPassword !== confirmPassword) {
+        logger.warn('New and confirm password do not match');
         return res.status(400).json({
             message: 'New and confirm password does not match',
         });
@@ -168,6 +187,7 @@ const resetPass = catchAsync(async (req, res, next) => {
     const user = await userModel.findOne({ email });
 
     if (!user) {
+        logger.warn('User not found');
         return next(new AppError('Invalid credentials', 401));
     }
 
@@ -177,6 +197,7 @@ const resetPass = catchAsync(async (req, res, next) => {
     );
 
     if (!isPasswordValid) {
+        logger.warn('Invalid credentials');
         return next(new AppError('Invalid credentials', 401));
     }
 
@@ -200,21 +221,20 @@ const resetPass = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    res.status(200).json({
-        message: 'Reset password successfully',
-        user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-        },
+    AppResponse.success(res, 'Reset password successfully', {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
     });
 });
 
 const refreshToken = catchAsync(async (req, res, next) => {
+    logger.info('Refreshing user token');
     const refreshTokenFromCookie = req.cookies?.refreshToken;
 
     if (!refreshTokenFromCookie) {
+        logger.warn('Refresh token not found in cookies');
         return next(new AppError('Unauthorized', 401));
     }
 
@@ -225,11 +245,13 @@ const refreshToken = catchAsync(async (req, res, next) => {
             process.env.JWT_REFRESH_SECRET
         );
     } catch (err) {
+        logger.warn('Invalid refresh token');
         return next(new AppError('Unauthorized', 401));
     }
 
     const user = await userModel.findById(decoded.id);
     if (!user) {
+        logger.warn('User not found');
         return next(new AppError('User not found', 404));
     }
 
@@ -238,6 +260,7 @@ const refreshToken = catchAsync(async (req, res, next) => {
         !user.refreshToken ||
         new Date(decoded.exp * 1000) < new Date()
     ) {
+        logger.warn('Invalid refresh token');
         return next(new AppError('Unauthorized', 401));
     }
 
@@ -261,8 +284,7 @@ const refreshToken = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    res.status(200).json({
-        message: 'Token refreshed successfully',
+    AppResponse.success(res, 'Token refreshed successfully', {
         accessToken: newAccessToken,
         user: {
             id: user._id,

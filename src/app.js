@@ -12,6 +12,8 @@ import healthRouter from './routes/healthRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { mongoSanitizer } from './middleware/mongoSanitizer.js';
+import responseHandler from './middleware/responseHandel.js';
+import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
 
@@ -21,6 +23,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(compression());
 
+app.use(requestLogger)
 app.use('/api', healthRouter);
 app.use(generalLimiter);
 
@@ -29,6 +32,7 @@ app.use('/api/product', productRouter);
 app.use('/api/order', orderRouter);
 app.use('/api/user', userRouter);
 
+app.use(responseHandler);
 app.use(errorHandler);
 
 export default app;
