@@ -34,12 +34,12 @@ const getCurrentUser = catchAsync(async (req, res, next) => {
         logger.warn('User not found');
         return next(new AppError('User not found', 404));
     }
-    AppResponse.success(res, 'Current user fetched successfully', {
+    return new AppResponse(200, 'Current user fetched successfully', {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
-    });
+    }).send(res);
 });
 
 const registerUser = catchAsync(async (req, res, next) => {
@@ -89,17 +89,12 @@ const registerUser = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    AppResponse.success(
-        res,
-        'User registered successfully',
-        {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-        },
-        201
-    );
+    return new AppResponse(201, 'User registered successfully', {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+    }).send(res);
 });
 
 const loginUser = catchAsync(async (req, res, next) => {
@@ -159,19 +154,19 @@ const loginUser = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    AppResponse.success(res, 'User logged in successfully', {
+    return new AppResponse(200, 'User logged in successfully', {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
-    });
+    }).send(res);
 });
 
 const logoutUser = catchAsync(async (req, res, next) => {
     logger.info('Logging out user');
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-    AppResponse.success(res, 'User logged out successfully');
+    return new AppResponse(200, 'User logged out successfully').send(res);
 });
 
 const resetPass = catchAsync(async (req, res, next) => {
@@ -179,9 +174,7 @@ const resetPass = catchAsync(async (req, res, next) => {
     const { email, currentPassword, newPassword, confirmPassword } = req.body;
     if (newPassword !== confirmPassword) {
         logger.warn('New and confirm password do not match');
-        return res.status(400).json({
-            message: 'New and confirm password does not match',
-        });
+        return new AppResponse(400, 'New and confirm password does not match').send(res);
     }
 
     const user = await userModel.findOne({ email });
@@ -221,12 +214,12 @@ const resetPass = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    AppResponse.success(res, 'Reset password successfully', {
+    return new AppResponse(200, 'Reset password successfully', {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
-    });
+    }).send(res);
 });
 
 const refreshToken = catchAsync(async (req, res, next) => {
@@ -284,7 +277,7 @@ const refreshToken = catchAsync(async (req, res, next) => {
         maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
     });
 
-    AppResponse.success(res, 'Token refreshed successfully', {
+    return new AppResponse(200, 'Token refreshed successfully', {
         accessToken: newAccessToken,
         user: {
             id: user._id,
@@ -292,7 +285,7 @@ const refreshToken = catchAsync(async (req, res, next) => {
             email: user.email,
             role: user.role,
         },
-    });
+    }).send(res);
 });
 
 export {

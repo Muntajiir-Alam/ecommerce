@@ -12,7 +12,6 @@ import healthRouter from './routes/healthRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { mongoSanitizer } from './middleware/mongoSanitizer.js';
-import responseHandler from './middleware/responseHandel.js';
 import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
@@ -32,7 +31,7 @@ app.use('/api/product', productRouter);
 app.use('/api/order', orderRouter);
 app.use('/api/user', userRouter);
 
-app.use(responseHandler);
+
 app.use(errorHandler);
 
 export default app;

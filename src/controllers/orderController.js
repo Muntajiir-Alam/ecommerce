@@ -3,6 +3,7 @@ import userModel from '../models/user.js';
 import productModel from '../models/product.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
+import AppResponse from '../utils/appResponse.js';
 
 const orderUser = catchAsync(async (req, res, next) => {
     const { userId, items, totalAmount, status } = req.body;
@@ -65,8 +66,8 @@ const orderUser = catchAsync(async (req, res, next) => {
         totalAmount,
         status,
     });
-
-    res.status(201).json({ message: 'Order created successfully', order });
+    
+    return new AppResponse(201, 'Order created successfully', { order }).send(res);
 });
 
 const getOrders = catchAsync(async (req, res, next) => {
@@ -75,7 +76,7 @@ const getOrders = catchAsync(async (req, res, next) => {
         .populate('user')
         .populate('items.productId');
 
-    res.status(200).json({ orders });
+    return new AppResponse(200, 'Orders fetched successfully', { orders }).send(res);
 });
 
 const getOrderById = catchAsync(async (req, res, next) => {
@@ -90,7 +91,7 @@ const getOrderById = catchAsync(async (req, res, next) => {
         return next(new AppError('Order not found', 404));
     }
 
-    res.status(200).json({ order });
+    return new AppResponse(200, 'Order fetched successfully', { order }).send(res);
 });
 
 const updateOrderStatus = catchAsync(async (req, res, next) => {
@@ -107,10 +108,7 @@ const updateOrderStatus = catchAsync(async (req, res, next) => {
         return next(new AppError('Order not found', 404));
     }
 
-    res.status(200).json({
-        message: 'Order status updated successfully',
-        order,
-    });
+    return new AppResponse(200, 'Order status updated successfully', { order }).send(res);
 });
 
 const deleteOrder = catchAsync(async (req, res, next) => {
@@ -122,7 +120,7 @@ const deleteOrder = catchAsync(async (req, res, next) => {
         return next(new AppError('Order not found', 404));
     }
 
-    res.status(200).json({ message: 'Order deleted successfully' });
+    return new AppResponse(200, 'Order deleted successfully', null).send(res);
 });
 
 export { orderUser, getOrders, getOrderById, updateOrderStatus, deleteOrder };

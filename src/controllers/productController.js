@@ -1,6 +1,7 @@
 import productModel from '../models/product.js';
 import uploadFile from '../service/img.storage.js';
 import AppError from '../utils/appError.js';
+import AppResponse from '../utils/appResponse.js';
 import catchAsync from '../utils/catchAsync.js';
 
 const addProduct = catchAsync(async (req, res, next) => {
@@ -51,8 +52,9 @@ const addProduct = catchAsync(async (req, res, next) => {
         stock,
         category,
     });
-
-    res.status(201).json({ message: 'Product added successfully', product });
+    return new AppResponse(201, 'Product added successfully', { product }).send(
+        res
+    );
 });
 
 const getProducts = catchAsync(async (req, res, next) => {
@@ -61,8 +63,9 @@ const getProducts = catchAsync(async (req, res, next) => {
     if (!products || products.length === 0) {
         return next(new AppError('No products found', 404));
     }
-
-    res.status(200).json({ products });
+    return new AppResponse(200, 'Featched all products', { products }).send(
+        res
+    );
 });
 
 const getProductById = catchAsync(async (req, res, next) => {
@@ -73,8 +76,7 @@ const getProductById = catchAsync(async (req, res, next) => {
     if (!product) {
         return next(new AppError('Product not found', 404));
     }
-
-    res.status(200).json({ product });
+    return new AppResponse(200, 'Fetch by id', { product }).send(res);
 });
 
 const updateProduct = catchAsync(async (req, res, next) => {
@@ -90,8 +92,9 @@ const updateProduct = catchAsync(async (req, res, next) => {
     if (!product) {
         return next(new AppError('Product not found', 404));
     }
-
-    res.status(200).json({ message: 'Product updated successfully', product });
+    return new AppResponse(200, 'Product updated successfully', {
+        product,
+    }).send(res);
 });
 
 const deleteProduct = catchAsync(async (req, res, next) => {
@@ -102,8 +105,7 @@ const deleteProduct = catchAsync(async (req, res, next) => {
     if (!product) {
         return next(new AppError('Product not found', 404));
     }
-
-    res.status(200).json({ message: 'Product deleted successfully' });
+    return new AppResponse(200, 'Product deleted successfully', null).send(res);
 });
 
 export {

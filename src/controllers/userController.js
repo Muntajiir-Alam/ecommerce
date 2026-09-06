@@ -1,6 +1,7 @@
 import orderModel from '../models/order.js';
 import userModel from '../models/user.js';
 import AppError from '../utils/appError.js';
+import AppResponse from '../utils/appResponse.js';
 import catchAsync from '../utils/catchAsync.js';
 
 const listUsers = catchAsync(async (req, res, next) => {
@@ -29,16 +30,14 @@ const listUsers = catchAsync(async (req, res, next) => {
         .sort({ createdAt: -1 });
 
     const totalUsers = await userModel.countDocuments(filter);
-
-    res.status(200).json({
-        success: true,
-        data: users,
+    return new AppResponse(200, 'Users fetched successfully', {
+        users,
         pagination: {
             currentPage: page,
             totalPages: Math.ceil(totalUsers / limit),
             totalUsers,
         },
-    });
+    }).send(res);
 });
 
 const viewUserDetails = catchAsync(async (req, res, next) => {
@@ -47,10 +46,7 @@ const viewUserDetails = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({
-        success: true,
-        data: user,
-    });
+    return new AppResponse(200, 'User details fetched successfully', { user }).send(res);
 });
 
 const updateUserRole = catchAsync(async (req, res, next) => {
@@ -62,10 +58,7 @@ const updateUserRole = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({
-        success: true,
-        data: user,
-    });
+    return new AppResponse(200, 'User role updated successfully', { user }).send(res);
 });
 
 const banUser = catchAsync(async (req, res, next) => {
@@ -76,7 +69,7 @@ const banUser = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({ message: `Banned user ID: ${id}`, data: user });
+    return new AppResponse(200, 'User banned successfully', { user }).send(res);
 });
 
 const unbanUser = catchAsync(async (req, res, next) => {
@@ -87,7 +80,7 @@ const unbanUser = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({ message: `Unbanned user ID: ${id}`, data: user });
+    return new AppResponse(200, 'User unbanned successfully', { user }).send(res);
 });
 
 const deleteUser = catchAsync(async (req, res, next) => {
@@ -98,7 +91,7 @@ const deleteUser = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({ message: `Deleted user ID: ${id}`, data: user });
+    return new AppResponse(200, 'User deleted successfully', { user }).send(res);
 });
 
 const restoreDeletedUser = catchAsync(async (req, res, next) => {
@@ -109,7 +102,7 @@ const restoreDeletedUser = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    res.status(200).json({ message: `Restored user ID: ${id}`, data: user });
+    return new AppResponse(200, 'User restored successfully', { user }).send(res);
 });
 
 const viewUserOrders = catchAsync(async (req, res, next) => {
@@ -118,11 +111,9 @@ const viewUserOrders = catchAsync(async (req, res, next) => {
     if (!orders || orders.length === 0) {
         return next(new AppError('Orders not found', 404));
     }
-    res.status(200).json({
-        message: `View order history for user ID: ${id}`,
-        data: orders,
-    });
+    return new AppResponse(200, 'User orders fetched successfully', { orders }).send(res);
 });
+
 
 export {
     listUsers,
