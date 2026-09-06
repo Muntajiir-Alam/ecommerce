@@ -110,20 +110,39 @@ const loginUser = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid credentials', 401));
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-        logger.warn('Invalid credentials');
-        return next(new AppError('Invalid credentials', 401));
-    }
-
     if (user.isDeleted) {
         logger.warn('User account is deleted');
         return next(new AppError('User account is deleted', 403));
     }
+
     if (user.isBanned) {
         logger.warn('User account is banned');
         return next(new AppError('User account is banned', 403));
+    }
+
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+        const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 60000);
+        return next(
+            new AppError(
+                `Account locked. Try again in ${minutesLeft} minutes`,
+                403
+            )
+        );
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+        user.failedLoginAttempts += 1;
+
+        if (user.failedLoginAttempts >= 5) {
+            user.lockUntil = Date.now() + 15 * 60 * 1000;
+            user.failedLoginAttempts = 0;
+        }
+
+        await user.save();
+        logger.warn('Invalid credentials');
+        return next(new AppError('Invalid credentials', 401));
     }
 
     const accessToken = generateAccessToken(user);
@@ -131,6 +150,7 @@ const loginUser = catchAsync(async (req, res, next) => {
         logger.error('Failed to generate access token');
         return next(new AppError('Failed to generate access token', 500));
     }
+
     const refreshToken = generateRefreshToken(user);
     if (!refreshToken) {
         logger.error('Failed to generate refresh token');
@@ -138,29 +158,10 @@ const loginUser = catchAsync(async (req, res, next) => {
     }
 
     user.refreshToken = refreshToken;
+    user.failedLoginAttempts = 0;
+    user.lockUntil = null;
     await user.save();
-
-    res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: Number(process.env.ACCESS_TOKEN_EXPIRY),
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: Number(process.env.REFRESH_TOKEN_EXPIRY),
-    });
-
-    return new AppResponse(200, 'User logged in successfully', {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-    }).send(res);
-});
+})
 
 const logoutUser = catchAsync(async (req, res, next) => {
     logger.info('Logging out user');
@@ -174,7 +175,10 @@ const resetPass = catchAsync(async (req, res, next) => {
     const { email, currentPassword, newPassword, confirmPassword } = req.body;
     if (newPassword !== confirmPassword) {
         logger.warn('New and confirm password do not match');
-        return new AppResponse(400, 'New and confirm password does not match').send(res);
+        return new AppResponse(
+            400,
+            'New and confirm password does not match'
+        ).send(res);
     }
 
     const user = await userModel.findOne({ email });

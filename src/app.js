@@ -23,13 +23,13 @@ app.use(cookieParser());
 app.use(compression());
 
 app.use(requestLogger)
-app.use('/api', healthRouter);
+app.use('/api/v1', healthRouter);
 app.use(generalLimiter);
 
-app.use('/api/auth', authRouter);
-app.use('/api/product', productRouter);
-app.use('/api/order', orderRouter);
-app.use('/api/user', userRouter);
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/product', productRouter);
+app.use('/api/v1/order', orderRouter);
+app.use('/api/v1/user', userRouter);
 
 
 app.use(errorHandler);
