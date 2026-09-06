@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['customer', 'admin'],
+            enum: ['customer', 'admin', 'seller'],
             default: 'customer',
         },
         isBanned: {
@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema(
         },
         failedLoginAttempts: { type: Number, default: 0 },
         lockUntil: { type: Date, default: null },
+        storeName: { type: String, default: '' },
+        isApprovedSeller: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

@@ -5,6 +5,7 @@ import {
     getProductById,
     updateProduct,
     deleteProduct,
+    getMyProducts
 } from '../controllers/productController.js';
 import { auth } from '../middleware/auth.js';
 import { role } from '../middleware/role.js';
@@ -50,12 +51,13 @@ const router = express.Router();
 router.post(
     '/',
     auth,
-    role('admin'),
+    role('admin', 'seller'),
     uploadProductImages,
     addProductValidationRule,
     addProduct
 );
 router.get('/', auth, role('admin', 'customer'), getProducts);
+router.get('/my-products', auth, role('seller'), getMyProducts);
 router.get(
     '/:id',
     getProductByIdValidationRule,
@@ -67,14 +69,14 @@ router.patch(
     '/:id',
     updateProductValidationRule,
     auth,
-    role('admin'),
+    role('admin', 'seller'),
     updateProduct
 );
 router.delete(
     '/:id',
     deleteProductValidationRule,
     auth,
-    role('admin'),
+    role('admin', 'seller'),
     deleteProduct
 );
 

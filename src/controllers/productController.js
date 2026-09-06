@@ -6,6 +6,12 @@ import catchAsync from '../utils/catchAsync.js';
 
 const addProduct = catchAsync(async (req, res, next) => {
     const { name, description, price, stock, category } = req.body;
+
+    if (req.user.role === 'seller' && !req.user.isApprovedSeller) {
+        return next(
+            new AppError('Your seller account is pending approval', 403)
+        );
+    }
     const productImages = req.files ?? [];
 
     if (productImages.length === 0) {
@@ -51,6 +57,7 @@ const addProduct = catchAsync(async (req, res, next) => {
         price,
         stock,
         category,
+        seller: req.user._id,
     });
     return new AppResponse(201, 'Product added successfully', { product }).send(
         res
@@ -92,6 +99,15 @@ const updateProduct = catchAsync(async (req, res, next) => {
     if (!product) {
         return next(new AppError('Product not found', 404));
     }
+
+    if (
+        req.user.role !== 'admin' &&
+        product.seller.toString() !== req.user.id
+    ) {
+        return next(
+            new AppError('You are not allowed to modify this product', 403)
+        );
+    }
     return new AppResponse(200, 'Product updated successfully', {
         product,
     }).send(res);
@@ -105,7 +121,22 @@ const deleteProduct = catchAsync(async (req, res, next) => {
     if (!product) {
         return next(new AppError('Product not found', 404));
     }
+
+    if (
+        req.user.role !== 'admin' &&
+        product.seller.toString() !== req.user.id
+    ) {
+        return next(
+            new AppError('You are not allowed to modify this product', 403)
+        );
+    }
     return new AppResponse(200, 'Product deleted successfully', null).send(res);
+});
+
+const getMyProducts = catchAsync(async (req, res, next) => {
+    const products = await productModel.find({ seller: req.user.id });
+
+    return new AppResponse(200, 'Your products fetched successfully', products).send(res);
 });
 
 export {
@@ -114,4 +145,5 @@ export {
     getProductById,
     updateProduct,
     deleteProduct,
+    getMyProducts,
 };

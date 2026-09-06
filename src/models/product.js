@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
     {
+        seller: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        },
         imagesUrls: {
             type: [String],
             required: true,
@@ -30,6 +35,7 @@ const productSchema = new mongoose.Schema(
             type: String,
             default: 'general',
         },
+        
     },
     { timestamps: true }
 );
