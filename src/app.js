@@ -10,6 +10,7 @@ import cartRouter from './routes/cartRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import healthRouter from './routes/healthRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -34,6 +35,7 @@ app.use('/api/v1/order', orderRouter);
 app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 
 
 app.use(errorHandler);
