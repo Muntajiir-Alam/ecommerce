@@ -6,6 +6,7 @@ import compression from 'compression';
 import authRouter from './routes/authRoutes.js';
 import productRouter from './routes/productRoutes.js';
 import orderRouter from './routes/orderRoutes.js';
+import cartRouter from './routes/cartRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import healthRouter from './routes/healthRoutes.js';
 
@@ -29,6 +30,7 @@ app.use(generalLimiter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/product', productRouter);
 app.use('/api/v1/order', orderRouter);
+app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/user', userRouter);
 
 
