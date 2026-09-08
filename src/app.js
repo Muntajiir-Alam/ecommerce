@@ -12,6 +12,7 @@ import healthRouter from './routes/healthRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -38,6 +39,7 @@ app.use('/api/v1/user', userRouter);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/wishlist', wishlistRoutes);
+app.use('/api/v1/payments', paymentRoutes);
 
 app.use(errorHandler);
 
