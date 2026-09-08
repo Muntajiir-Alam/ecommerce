@@ -214,6 +214,73 @@ const getOrderTracking = catchAsync(async (req, res, next) => {
     }).send(res);
 });
 
+const requestReturn = catchAsync(async (req, res, next) => {
+    const { reason } = req.body;
+    const order = await orderModel.findById(req.params.id);
+
+    if (!order) {
+        return next(new AppError('Order not found', 404));
+    }
+
+    if (order.user.toString() !== req.user.id) {
+        return next(new AppError('You are not allowed to request a return for this order', 403));
+    }
+
+    if (order.status !== 'delivered') {
+        return next(new AppError('Only delivered orders can be returned', 400));
+    }
+
+    if (order.returnRequest.isRequested) {
+        return next(new AppError('A return request already exists for this order', 409));
+    }
+
+    // Find when it was delivered, from statusHistory
+    const deliveredEntry = order.statusHistory.find((entry) => entry.status === 'delivered');
+    const deliveredAt = deliveredEntry ? deliveredEntry.changedAt : order.updatedAt;
+
+    const daysSinceDelivery = (Date.now() - new Date(deliveredAt)) / (1000 * 60 * 60 * 24);
+
+    if (daysSinceDelivery > 7) {
+        return next(new AppError('Return window has expired (7 days from delivery)', 400));
+    }
+
+    order.returnRequest = {
+        isRequested: true,
+        reason,
+        status: 'requested',
+        requestedAt: new Date(),
+    };
+
+    await order.save();
+
+    return new AppResponse(200, 'Return request submitted successfully', order.returnRequest).send(res);
+});
+
+export const resolveReturnRequest = catchAsync(async (req, res, next) => {
+    const { decision } = req.body; // 'approved' or 'rejected'
+
+    const order = await orderModel.findById(req.params.id);
+
+    if (!order) {
+        return next(new AppError('Order not found', 404));
+    }
+
+    if (order.returnRequest.status !== 'requested') {
+        return next(new AppError('No pending return request for this order', 400));
+    }
+
+    order.returnRequest.status = decision;
+    order.returnRequest.resolvedAt = new Date();
+
+    if (decision === 'approved') {
+        order.status = 'return_approved'; // you'd need to add this to your status enum, or handle separately
+    }
+
+    await order.save();
+
+    return new AppResponse(200, `Return request ${decision}`, order.returnRequest).send(res);
+});
+
 export {
     orderUser,
     getOrders,
@@ -221,4 +288,6 @@ export {
     updateOrderStatus,
     deleteOrder,
     getOrderTracking,
+    requestReturn,
+    resolveReturnRequest,
 };

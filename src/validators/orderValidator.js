@@ -39,9 +39,23 @@ export const getOrderTrackingValidationRule = [
     validateResult,
 ];
 
+export const requestReturnValidationRules = [
+    param('id').isMongoId().withMessage('Invalid order ID'),
+    body('reason').isString().trim().notEmpty().withMessage('Return reason is required'),
+    validateResult,
+];
+
+export const resolveReturnValidationRules = [
+    param('id').isMongoId().withMessage('Invalid order ID'),
+    body('decision').isIn(['approved', 'rejected']).withMessage('Decision must be approved or rejected'),
+    validateResult,
+];
+
 export {
     orderValidationRule,
     getOrderByIdValidationRule,
     deleteOrderValidationRule,
     getOrderTrackingValidationRule,
+    requestReturnValidationRules,
+    resolveReturnValidationRules,
 };

@@ -6,6 +6,8 @@ import {
     getOrderTracking,
     orderUser,
     updateOrderStatus,
+    requestReturn,
+    resolveReturnRequest,
 } from '../controllers/orderController.js';
 import { auth } from '../middleware/auth.js';
 import { role } from '../middleware/role.js';
@@ -15,6 +17,8 @@ import {
     getOrderTrackingValidationRule,
     orderValidationRule,
     updateOrderStatusValidationRule,
+    requestReturnValidationRules,
+    resolveReturnValidationRules,
 } from '../validators/orderValidator.js';
 
 const router = express.Router();
@@ -47,6 +51,14 @@ router.get(
     auth,
     getOrderTrackingValidationRule,
     getOrderTracking
+);
+router.post('/:id/return', auth, requestReturnValidationRules, requestReturn);
+router.patch(
+    '/:id/return/resolve',
+    auth,
+    role('admin'),
+    resolveReturnValidationRules,
+    resolveReturnRequest
 );
 
 export default router;

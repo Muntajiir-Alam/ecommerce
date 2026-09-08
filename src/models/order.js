@@ -24,7 +24,14 @@ const orderSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'],
+            enum: [
+                'pending',
+                'confirmed',
+                'shipped',
+                'out_for_delivery',
+                'delivered',
+                'cancelled',
+            ],
             default: 'pending',
         },
         paymentStatus: {
@@ -36,7 +43,14 @@ const orderSchema = new mongoose.Schema(
             {
                 status: {
                     type: String,
-                    enum: ['pending', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'],
+                    enum: [
+                        'pending',
+                        'confirmed',
+                        'shipped',
+                        'out_for_delivery',
+                        'delivered',
+                        'cancelled',
+                    ],
                 },
                 changedAt: {
                     type: Date,
@@ -48,6 +62,23 @@ const orderSchema = new mongoose.Schema(
                 },
             },
         ],
+        returnRequest: {
+            isRequested: { type: Boolean, default: false },
+            reason: { type: String, default: '' },
+            status: {
+                type: String,
+                enum: [
+                    'none',
+                    'requested',
+                    'approved',
+                    'rejected',
+                    'completed',
+                ],
+                default: 'none',
+            },
+            requestedAt: { type: Date },
+            resolvedAt: { type: Date },
+        },
     },
     { timestamps: true }
 );
