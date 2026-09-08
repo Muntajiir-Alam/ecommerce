@@ -2,7 +2,6 @@ import { body, param } from 'express-validator';
 import validateResult from '../middleware/validate';
 
 const orderValidationRule = [
-    body('userId').isMongoId().withMessage('Invalid user ID'),
     body('items')
         .isArray({ min: 1 })
         .withMessage('Items must be an array with at least one item'),
@@ -10,15 +9,9 @@ const orderValidationRule = [
     body('items.*.quantity')
         .isInt({ min: 1 })
         .withMessage('Quantity must be a positive integer'),
-    body('items.*.price')
-        .isFloat({ min: 0 })
-        .withMessage('Price must be a non-negative number'),
     body('totalAmount')
         .isFloat({ min: 0 })
         .withMessage('Total amount must be a non-negative number'),
-    body('status')
-        .isIn(['pending', 'completed', 'cancelled'])
-        .withMessage('Status must be either pending, completed, or cancelled'),
     validateResult,
 ];
 
@@ -49,6 +42,6 @@ export const getOrderTrackingValidationRule = [
 export {
     orderValidationRule,
     getOrderByIdValidationRule,
-    updateOrderStatusValidationRule,
     deleteOrderValidationRule,
+    getOrderTrackingValidationRule,
 };

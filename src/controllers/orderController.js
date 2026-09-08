@@ -6,7 +6,8 @@ import catchAsync from '../utils/catchAsync.js';
 import AppResponse from '../utils/appResponse.js';
 
 const orderUser = catchAsync(async (req, res, next) => {
-    const { userId, items, totalAmount, status } = req.body;
+    const { items, totalAmount } = req.body;
+    const userId = req.user.id;
 
     const user = await userModel.findById(userId);
 
@@ -20,6 +21,7 @@ const orderUser = catchAsync(async (req, res, next) => {
 
     let totalAmountCalculated = 0;
     const orderItems = [];
+    const stockUpdates = []; // Track for rollback if needed
 
     for (const item of items) {
         const { productId, quantity } = item;
@@ -41,6 +43,9 @@ const orderUser = catchAsync(async (req, res, next) => {
             );
         }
 
+        // Track stock reduction for potential rollback
+        stockUpdates.push({ product, newStock: product.stock - quantity });
+
         // Reduce stock
         product.stock -= quantity;
         await product.save();
@@ -48,35 +53,56 @@ const orderUser = catchAsync(async (req, res, next) => {
         totalAmountCalculated += product.price * quantity;
 
         orderItems.push({
-            productId,
+            product: productId,
             quantity,
             price: product.price,
         });
     }
 
     if (totalAmountCalculated !== totalAmount) {
+        // Rollback stock changes on amount mismatch
+        for (const { product, newStock } of stockUpdates) {
+            product.stock = newStock;
+            await product.save();
+        }
         return next(
             new AppError('Total amount does not match calculated total', 400)
         );
     }
 
-    const order = await orderModel.create({
-        user: userId,
-        items: orderItems,
-        totalAmount,
-        status,
-    });
+    try {
+        const order = await orderModel.create({
+            user: userId,
+            items: orderItems,
+            totalAmount,
+            status: 'pending', // Always create as pending
+        });
 
-    return new AppResponse(201, 'Order created successfully', { order }).send(
-        res
-    );
+        return new AppResponse(201, 'Order created successfully', { order }).send(
+            res
+        );
+    } catch (error) {
+        // Rollback stock changes on order creation failure
+        for (const { product, newStock } of stockUpdates) {
+            product.stock = newStock;
+            await product.save();
+        }
+        throw error; // Re-throw for error handler
+    }
 });
 
 const getOrders = catchAsync(async (req, res, next) => {
+    const query = {};
+
+    // Non-admin customers only see their own orders
+    if (req.user.role !== 'admin') {
+        query.user = req.user.id;
+    }
+
     const orders = await orderModel
-        .find()
+        .find(query)
         .populate('user')
-        .populate('items.productId');
+        .populate('items.product');
 
     return new AppResponse(200, 'Orders fetched successfully', { orders }).send(
         res
@@ -89,10 +115,17 @@ const getOrderById = catchAsync(async (req, res, next) => {
     const order = await orderModel
         .findById(id)
         .populate('user')
-        .populate('items.productId');
+        .populate('items.product');
 
     if (!order) {
         return next(new AppError('Order not found', 404));
+    }
+
+    // Ownership check: customer can only see their own orders
+    if (order.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+        return next(
+            new AppError('You are not allowed to view this order', 403)
+        );
     }
 
     return new AppResponse(200, 'Order fetched successfully', { order }).send(
@@ -109,7 +142,7 @@ const updateOrderStatus = catchAsync(async (req, res, next) => {
         return next(new AppError('Order not found', 404));
     }
 
-    // prevent illogical transitions (optional but good practice)
+    // Prevent illogical transitions
     const validTransitions = {
         pending: ['confirmed', 'cancelled'],
         confirmed: ['shipped', 'cancelled'],
@@ -119,7 +152,7 @@ const updateOrderStatus = catchAsync(async (req, res, next) => {
         cancelled: [],
     };
 
-    if (!validTransitions[order.status].includes(status)) {
+    if (!validTransitions[order.status] || !validTransitions[order.status].includes(status)) {
         return next(
             new AppError(
                 `Cannot change status from ${order.status} to ${status}`,
@@ -142,11 +175,20 @@ const updateOrderStatus = catchAsync(async (req, res, next) => {
 const deleteOrder = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
-    const order = await orderModel.findByIdAndDelete(id);
+    const order = await orderModel.findById(id);
 
     if (!order) {
         return next(new AppError('Order not found', 404));
     }
+
+    // Ownership check: customer can only delete their own orders
+    if (order.user.toString() !== req.user.id && req.user.role !== 'admin') {
+        return next(
+            new AppError('You are not allowed to delete this order', 403)
+        );
+    }
+
+    await orderModel.findByIdAndDelete(id);
 
     return new AppResponse(200, 'Order deleted successfully', null).send(res);
 });
@@ -154,7 +196,7 @@ const deleteOrder = catchAsync(async (req, res, next) => {
 const getOrderTracking = catchAsync(async (req, res, next) => {
     const order = await orderModel
         .findById(req.params.id)
-        .select('status statusHistory');
+        .select('status statusHistory user');
 
     if (!order) {
         return next(new AppError('Order not found', 404));

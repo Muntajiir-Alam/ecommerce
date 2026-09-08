@@ -19,27 +19,27 @@ import {
 
 const router = express.Router();
 
-router.post('/', orderValidationRule, auth, role('customer'), orderUser);
+router.post('/', auth, role('customer'), orderValidationRule, orderUser);
 router.get('/', auth, role('customer'), getOrders);
 router.get(
     '/:id',
-    getOrderByIdValidationRule,
     auth,
     role('customer'),
+    getOrderByIdValidationRule,
     getOrderById
 );
 router.patch(
     '/:id/status',
-    updateOrderStatusValidationRule,
     auth,
     role('admin'),
+    updateOrderStatusValidationRule,
     updateOrderStatus
 );
 router.delete(
     '/:id',
-    deleteOrderValidationRule,
     auth,
     role('customer', 'admin'),
+    deleteOrderValidationRule,
     deleteOrder
 );
 router.get(
