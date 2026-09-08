@@ -9,20 +9,13 @@ const orderSchema = new mongoose.Schema(
         },
         items: [
             {
-                productId: {
+                product: {
                     type: mongoose.Schema.Types.ObjectId,
                     ref: 'Product',
                     required: true,
                 },
-                quantity: {
-                    type: Number,
-                    required: true,
-                    min: 1,
-                },
-                price: {
-                    type: Number,
-                    required: true,
-                },
+                quantity: { type: Number, required: true, min: 1 },
+                price: { type: Number, required: true },
             },
         ],
         totalAmount: {
@@ -39,6 +32,29 @@ const orderSchema = new mongoose.Schema(
             enum: ['unpaid', 'paid', 'refunded'],
             default: 'unpaid',
         },
+        statusHistory: [
+            {
+                status: {
+                    type: String,
+                    enum: [
+                        'pending',
+                        'confirmed',
+                        'shipped',
+                        'out_for_delivery',
+                        'delivered',
+                        'cancelled',
+                    ],
+                },
+                changedAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                note: {
+                    type: String,
+                    default: '',
+                },
+            },
+        ],
     },
     { timestamps: true }
 );

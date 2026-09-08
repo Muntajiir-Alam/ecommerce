@@ -1,12 +1,5 @@
-import { body, param, validationResult } from 'express-validator';
-
-async function validateResult(req, res, next) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-}
+import { body, param } from 'express-validator';
+import validateResult from '../middleware/validate';
 
 const orderValidationRule = [
     body('userId').isMongoId().withMessage('Invalid user ID'),
@@ -34,11 +27,12 @@ const getOrderByIdValidationRule = [
     validateResult,
 ];
 
-const updateOrderStatusValidationRule = [
+export const updateOrderStatusValidationRule = [
     param('id').isMongoId().withMessage('Invalid order ID'),
     body('status')
-        .isIn(['pending', 'completed', 'cancelled'])
-        .withMessage('Status must be either pending, completed, or cancelled'),
+        .isIn(['pending', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'])
+        .withMessage('Invalid status'),
+    body('note').optional().isString().trim().isLength({ max: 200 }),
     validateResult,
 ];
 
@@ -46,6 +40,12 @@ const deleteOrderValidationRule = [
     param('id').isMongoId().withMessage('Invalid order ID'),
     validateResult,
 ];
+
+export const getOrderTrackingValidationRule = [
+    param('id').isMongoId().withMessage('Invalid order ID'),
+    validateResult,
+];
+
 export {
     orderValidationRule,
     getOrderByIdValidationRule,

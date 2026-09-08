@@ -3,6 +3,7 @@ import {
     deleteOrder,
     getOrderById,
     getOrders,
+    getOrderTracking,
     orderUser,
     updateOrderStatus,
 } from '../controllers/orderController.js';
@@ -11,6 +12,7 @@ import { role } from '../middleware/role.js';
 import {
     deleteOrderValidationRule,
     getOrderByIdValidationRule,
+    getOrderTrackingValidationRule,
     orderValidationRule,
     updateOrderStatusValidationRule,
 } from '../validators/orderValidator.js';
@@ -39,6 +41,12 @@ router.delete(
     auth,
     role('customer', 'admin'),
     deleteOrder
+);
+router.get(
+    '/:id/tracking',
+    auth,
+    getOrderTrackingValidationRule,
+    getOrderTracking
 );
 
 export default router;

@@ -66,8 +66,10 @@ const orderUser = catchAsync(async (req, res, next) => {
         totalAmount,
         status,
     });
-    
-    return new AppResponse(201, 'Order created successfully', { order }).send(res);
+
+    return new AppResponse(201, 'Order created successfully', { order }).send(
+        res
+    );
 });
 
 const getOrders = catchAsync(async (req, res, next) => {
@@ -76,7 +78,9 @@ const getOrders = catchAsync(async (req, res, next) => {
         .populate('user')
         .populate('items.productId');
 
-    return new AppResponse(200, 'Orders fetched successfully', { orders }).send(res);
+    return new AppResponse(200, 'Orders fetched successfully', { orders }).send(
+        res
+    );
 });
 
 const getOrderById = catchAsync(async (req, res, next) => {
@@ -91,24 +95,48 @@ const getOrderById = catchAsync(async (req, res, next) => {
         return next(new AppError('Order not found', 404));
     }
 
-    return new AppResponse(200, 'Order fetched successfully', { order }).send(res);
+    return new AppResponse(200, 'Order fetched successfully', { order }).send(
+        res
+    );
 });
 
 const updateOrderStatus = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const { status } = req.body;
+    const { status, note } = req.body;
 
-    const order = await orderModel.findByIdAndUpdate(
-        id,
-        { status },
-        { new: true }
-    );
+    const order = await orderModel.findById(req.params.id);
 
     if (!order) {
         return next(new AppError('Order not found', 404));
     }
 
-    return new AppResponse(200, 'Order status updated successfully', { order }).send(res);
+    // prevent illogical transitions (optional but good practice)
+    const validTransitions = {
+        pending: ['confirmed', 'cancelled'],
+        confirmed: ['shipped', 'cancelled'],
+        shipped: ['out_for_delivery'],
+        out_for_delivery: ['delivered'],
+        delivered: [],
+        cancelled: [],
+    };
+
+    if (!validTransitions[order.status].includes(status)) {
+        return next(
+            new AppError(
+                `Cannot change status from ${order.status} to ${status}`,
+                400
+            )
+        );
+    }
+
+    order.status = status;
+    order.statusHistory.push({ status, note: note || '' });
+    await order.save();
+
+    return new AppResponse(
+        200,
+        'Order status updated successfully',
+        order
+    ).send(res);
 });
 
 const deleteOrder = catchAsync(async (req, res, next) => {
@@ -123,4 +151,32 @@ const deleteOrder = catchAsync(async (req, res, next) => {
     return new AppResponse(200, 'Order deleted successfully', null).send(res);
 });
 
-export { orderUser, getOrders, getOrderById, updateOrderStatus, deleteOrder };
+const getOrderTracking = catchAsync(async (req, res, next) => {
+    const order = await orderModel
+        .findById(req.params.id)
+        .select('status statusHistory');
+
+    if (!order) {
+        return next(new AppError('Order not found', 404));
+    }
+
+    if (order.user.toString() !== req.user.id && req.user.role !== 'admin') {
+        return next(
+            new AppError('You are not allowed to view this order', 403)
+        );
+    }
+
+    return new AppResponse(200, 'Order tracking fetched successfully', {
+        currentStatus: order.status,
+        timeline: order.statusHistory,
+    }).send(res);
+});
+
+export {
+    orderUser,
+    getOrders,
+    getOrderById,
+    updateOrderStatus,
+    deleteOrder,
+    getOrderTracking,
+};
