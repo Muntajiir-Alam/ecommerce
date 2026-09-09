@@ -2,8 +2,8 @@ import rateLimit from 'express-rate-limit';
 
 
 export const generalLimiter = rateLimit({
-    windowMs:  60 * 1000, // 15 minutes
-    max: 3, // 100 requests per IP per window
+    windowMs:  15 *60 * 1000, // 15 minutes
+    max: 100, // 100 requests per IP per window
     handler: (req, res) => {
         res.status(429).json({
             success: false,

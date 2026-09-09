@@ -10,6 +10,7 @@ import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 import logger from '../utils/logger.js';
 import AppResponse from '../utils/appResponse.js';
+import { log } from 'console';
 
 const getCurrentUser = catchAsync(async (req, res, next) => {
     logger.info('Fetching current user information');
@@ -44,7 +45,7 @@ const getCurrentUser = catchAsync(async (req, res, next) => {
 
 const registerUser = catchAsync(async (req, res, next) => {
     logger.info('Registering new user');
-    const { username, email, password, role = 'customer' } = req.body;
+    const { username, email, password } = req.body;
 
     const isUserAlreadyExists = await userModel.findOne({
         $or: [{ username }, { email }],
@@ -61,7 +62,6 @@ const registerUser = catchAsync(async (req, res, next) => {
         username,
         email,
         password: hash,
-        role,
     });
 
     if (!user) {
@@ -104,7 +104,6 @@ const loginUser = catchAsync(async (req, res, next) => {
     const user = await userModel.findOne({
         $or: [{ username }, { email }],
     });
-
     if (!user) {
         logger.warn('User not found');
         return next(new AppError('Invalid credentials', 401));
@@ -161,7 +160,29 @@ const loginUser = catchAsync(async (req, res, next) => {
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
     await user.save();
-})
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+    });
+
+    return new AppResponse(200, 'User logged in successfully', {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        accessToken,
+    }).send(res);
+});
 
 const logoutUser = catchAsync(async (req, res, next) => {
     logger.info('Logging out user');

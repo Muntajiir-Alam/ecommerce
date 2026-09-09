@@ -256,7 +256,7 @@ const requestReturn = catchAsync(async (req, res, next) => {
     return new AppResponse(200, 'Return request submitted successfully', order.returnRequest).send(res);
 });
 
-export const resolveReturnRequest = catchAsync(async (req, res, next) => {
+const resolveReturnRequest = catchAsync(async (req, res, next) => {
     const { decision } = req.body; // 'approved' or 'rejected'
 
     const order = await orderModel.findById(req.params.id);

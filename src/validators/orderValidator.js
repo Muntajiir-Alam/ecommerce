@@ -1,5 +1,5 @@
 import { body, param } from 'express-validator';
-import validateResult from '../middleware/validate';
+import validateResult from '../middleware/validate.js';
 
 const orderValidationRule = [
     body('items')
@@ -20,7 +20,7 @@ const getOrderByIdValidationRule = [
     validateResult,
 ];
 
-export const updateOrderStatusValidationRule = [
+const updateOrderStatusValidationRule = [
     param('id').isMongoId().withMessage('Invalid order ID'),
     body('status')
         .isIn(['pending', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'])
@@ -34,18 +34,18 @@ const deleteOrderValidationRule = [
     validateResult,
 ];
 
-export const getOrderTrackingValidationRule = [
+const getOrderTrackingValidationRule = [
     param('id').isMongoId().withMessage('Invalid order ID'),
     validateResult,
 ];
 
-export const requestReturnValidationRules = [
+const requestReturnValidationRules = [
     param('id').isMongoId().withMessage('Invalid order ID'),
     body('reason').isString().trim().notEmpty().withMessage('Return reason is required'),
     validateResult,
 ];
 
-export const resolveReturnValidationRules = [
+const resolveReturnValidationRules = [
     param('id').isMongoId().withMessage('Invalid order ID'),
     body('decision').isIn(['approved', 'rejected']).withMessage('Decision must be approved or rejected'),
     validateResult,
@@ -54,6 +54,7 @@ export const resolveReturnValidationRules = [
 export {
     orderValidationRule,
     getOrderByIdValidationRule,
+    updateOrderStatusValidationRule,
     deleteOrderValidationRule,
     getOrderTrackingValidationRule,
     requestReturnValidationRules,
