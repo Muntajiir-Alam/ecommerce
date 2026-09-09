@@ -11,15 +11,13 @@ async function validateResult(req, res, next) {
 const getUserListValidationRules = [
     query('search')
         .isString()
-        .withMessage('Search must be a string')
-        .isLength({ min: 3 })
-        .withMessage('Search must be at least 3 characters long'),
+        .withMessage('Search must be a string'),
 
     query('role')
         .isString()
         .withMessage('Role must be a string')
-        .isIn(['admin', 'customer'])
-        .withMessage('Role must be either admin or customer'),
+        .isIn(['admin', 'customer','seller'])
+        .withMessage('Role must be either admin, customer and seller'),
 
     query('page').isInt().withMessage('Page must be a number'),
 
@@ -38,7 +36,7 @@ const updateUserRoleValidationRules = [
     body('role')
         .isString()
         .withMessage('Role must be a string')
-        .isIn(['admin', 'customer'])
+        .isIn(['admin', 'customer','seller'])
         .withMessage('Role must be either admin or customer'),
     validateResult,
 ];

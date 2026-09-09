@@ -6,7 +6,7 @@ import catchAsync from '../utils/catchAsync.js';
 import AppResponse from '../utils/appResponse.js';
 
 const orderUser = catchAsync(async (req, res, next) => {
-    const { items, totalAmount } = req.body;
+    const { items } = req.body;
     const userId = req.user.id;
 
     const user = await userModel.findById(userId);
@@ -59,28 +59,17 @@ const orderUser = catchAsync(async (req, res, next) => {
         });
     }
 
-    if (totalAmountCalculated !== totalAmount) {
-        // Rollback stock changes on amount mismatch
-        for (const { product, newStock } of stockUpdates) {
-            product.stock = newStock;
-            await product.save();
-        }
-        return next(
-            new AppError('Total amount does not match calculated total', 400)
-        );
-    }
-
     try {
         const order = await orderModel.create({
             user: userId,
             items: orderItems,
-            totalAmount,
+            totalAmount: totalAmountCalculated,
             status: 'pending', // Always create as pending
         });
 
-        return new AppResponse(201, 'Order created successfully', { order }).send(
-            res
-        );
+        return new AppResponse(201, 'Order created successfully', {
+            order,
+        }).send(res);
     } catch (error) {
         // Rollback stock changes on order creation failure
         for (const { product, newStock } of stockUpdates) {
@@ -101,8 +90,13 @@ const getOrders = catchAsync(async (req, res, next) => {
 
     const orders = await orderModel
         .find(query)
-        .populate('user')
-        .populate('items.product');
+        .select('items totalAmount status paymentStatus createdAt')
+        .populate('items.product', 'name imagesUrls')
+        .populate(
+            req.user.role === 'admin'
+                ? { path: 'user', select: 'username email' }
+                : ''
+        );
 
     return new AppResponse(200, 'Orders fetched successfully', { orders }).send(
         res
@@ -114,15 +108,19 @@ const getOrderById = catchAsync(async (req, res, next) => {
 
     const order = await orderModel
         .findById(id)
-        .populate('user')
-        .populate('items.product');
+        .select('items totalAmount status paymentStatus createdAt')
+        .populate('user', 'username email')
+        .populate('items.product', 'name imagesUrls');
 
     if (!order) {
         return next(new AppError('Order not found', 404));
     }
 
     // Ownership check: customer can only see their own orders
-    if (order.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (
+        order.user._id.toString() !== req.user.id &&
+        req.user.role !== 'admin'
+    ) {
         return next(
             new AppError('You are not allowed to view this order', 403)
         );
@@ -136,7 +134,11 @@ const getOrderById = catchAsync(async (req, res, next) => {
 const updateOrderStatus = catchAsync(async (req, res, next) => {
     const { status, note } = req.body;
 
-    const order = await orderModel.findById(req.params.id);
+    const order = await orderModel
+        .findById(req.params.id)
+        .select('items totalAmount status paymentStatus createdAt')
+        .populate('user', 'username email')
+        .populate('items.product', 'name imagesUrls');
 
     if (!order) {
         return next(new AppError('Order not found', 404));
@@ -152,7 +154,10 @@ const updateOrderStatus = catchAsync(async (req, res, next) => {
         cancelled: [],
     };
 
-    if (!validTransitions[order.status] || !validTransitions[order.status].includes(status)) {
+    if (
+        !validTransitions[order.status] ||
+        !validTransitions[order.status].includes(status)
+    ) {
         return next(
             new AppError(
                 `Cannot change status from ${order.status} to ${status}`,
@@ -188,9 +193,9 @@ const deleteOrder = catchAsync(async (req, res, next) => {
         );
     }
 
-    await orderModel.findByIdAndDelete(id);
+    const result = await orderModel.findByIdAndDelete(id);
 
-    return new AppResponse(200, 'Order deleted successfully', null).send(res);
+    return new AppResponse(200, 'Order deleted successfully').send(res);
 });
 
 const getOrderTracking = catchAsync(async (req, res, next) => {
@@ -223,7 +228,12 @@ const requestReturn = catchAsync(async (req, res, next) => {
     }
 
     if (order.user.toString() !== req.user.id) {
-        return next(new AppError('You are not allowed to request a return for this order', 403));
+        return next(
+            new AppError(
+                'You are not allowed to request a return for this order',
+                403
+            )
+        );
     }
 
     if (order.status !== 'delivered') {
@@ -231,17 +241,29 @@ const requestReturn = catchAsync(async (req, res, next) => {
     }
 
     if (order.returnRequest.isRequested) {
-        return next(new AppError('A return request already exists for this order', 409));
+        return next(
+            new AppError('A return request already exists for this order', 409)
+        );
     }
 
     // Find when it was delivered, from statusHistory
-    const deliveredEntry = order.statusHistory.find((entry) => entry.status === 'delivered');
-    const deliveredAt = deliveredEntry ? deliveredEntry.changedAt : order.updatedAt;
+    const deliveredEntry = order.statusHistory.find(
+        (entry) => entry.status === 'delivered'
+    );
+    const deliveredAt = deliveredEntry
+        ? deliveredEntry.changedAt
+        : order.updatedAt;
 
-    const daysSinceDelivery = (Date.now() - new Date(deliveredAt)) / (1000 * 60 * 60 * 24);
+    const daysSinceDelivery =
+        (Date.now() - new Date(deliveredAt)) / (1000 * 60 * 60 * 24);
 
     if (daysSinceDelivery > 7) {
-        return next(new AppError('Return window has expired (7 days from delivery)', 400));
+        return next(
+            new AppError(
+                'Return window has expired (7 days from delivery)',
+                400
+            )
+        );
     }
 
     order.returnRequest = {
@@ -253,7 +275,11 @@ const requestReturn = catchAsync(async (req, res, next) => {
 
     await order.save();
 
-    return new AppResponse(200, 'Return request submitted successfully', order.returnRequest).send(res);
+    return new AppResponse(
+        200,
+        'Return request submitted successfully',
+        order.returnRequest
+    ).send(res);
 });
 
 const resolveReturnRequest = catchAsync(async (req, res, next) => {
@@ -266,7 +292,9 @@ const resolveReturnRequest = catchAsync(async (req, res, next) => {
     }
 
     if (order.returnRequest.status !== 'requested') {
-        return next(new AppError('No pending return request for this order', 400));
+        return next(
+            new AppError('No pending return request for this order', 400)
+        );
     }
 
     order.returnRequest.status = decision;
@@ -278,7 +306,11 @@ const resolveReturnRequest = catchAsync(async (req, res, next) => {
 
     await order.save();
 
-    return new AppResponse(200, `Return request ${decision}`, order.returnRequest).send(res);
+    return new AppResponse(
+        200,
+        `Return request ${decision}`,
+        order.returnRequest
+    ).send(res);
 });
 
 export {

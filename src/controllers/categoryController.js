@@ -5,8 +5,10 @@ import AppResponse from '../utils/appResponse.js';
 
 export const createCategory = catchAsync(async (req, res, next) => {
     const { name, description } = req.body;
-    const isAlready = categoryModel.find({ name });
+    const isAlready = await categoryModel.findOne({ name });
+    console.log(isAlready);
     
+
     if (isAlready)
         return next(new AppError('Category already exists', 401));
     const category = await categoryModel.create({

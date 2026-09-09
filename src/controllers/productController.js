@@ -65,7 +65,7 @@ const addProduct = catchAsync(async (req, res, next) => {
 });
 
 const getProducts = catchAsync(async (req, res, next) => {
-    const products = await productModel.find();
+    const products = await productModel.find().populate('category', '-_id name description').populate('seller', '-_id name storeName');
 
     if (!products || products.length === 0) {
         return next(new AppError('No products found', 404));

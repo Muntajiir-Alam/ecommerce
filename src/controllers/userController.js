@@ -24,7 +24,7 @@ const listUsers = catchAsync(async (req, res, next) => {
 
     const users = await userModel
         .find(filter)
-        .select('-password')
+        .select('username email role isBanned isDeleted createdAt')
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 });
@@ -42,11 +42,15 @@ const listUsers = catchAsync(async (req, res, next) => {
 
 const viewUserDetails = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const user = await userModel.findById(id).select('-password');
+    const user = await userModel
+        .findById(id)
+        .select('username email role isBanned isDeleted createdAt');
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    return new AppResponse(200, 'User details fetched successfully', { user }).send(res);
+    return new AppResponse(200, 'User details fetched successfully', {
+        user,
+    }).send(res);
 });
 
 const updateUserRole = catchAsync(async (req, res, next) => {
@@ -54,18 +58,20 @@ const updateUserRole = catchAsync(async (req, res, next) => {
     const { role } = req.body;
     const user = await userModel
         .findByIdAndUpdate(id, { role }, { returnDocument: 'after' })
-        .select('-password');
+        .select('username email role isBanned isDeleted createdAt');
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    return new AppResponse(200, 'User role updated successfully', { user }).send(res);
+    return new AppResponse(200, 'User role updated successfully', {
+        user,
+    }).send(res);
 });
 
 const banUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const user = await userModel
         .findByIdAndUpdate(id, { isBanned: true }, { returnDocument: 'after' })
-        .select('-password');
+        .select('username email role isBanned isDeleted createdAt');
     if (!user) {
         return next(new AppError('User not found', 404));
     }
@@ -76,44 +82,56 @@ const unbanUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const user = await userModel
         .findByIdAndUpdate(id, { isBanned: false }, { returnDocument: 'after' })
-        .select('-password');
+        .select('username email role isBanned isDeleted createdAt');
+
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    return new AppResponse(200, 'User unbanned successfully', { user }).send(res);
+    return new AppResponse(200, 'User unbanned successfully', { user }).send(
+        res
+    );
 });
 
 const deleteUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const user = await userModel
         .findByIdAndUpdate(id, { isDeleted: true }, { new: true })
-        .select('-password');
+        .select('username email role isBanned isDeleted createdAt');
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    return new AppResponse(200, 'User deleted successfully', { user }).send(res);
+    return new AppResponse(200, 'User deleted successfully', { user }).send(
+        res
+    );
 });
 
 const restoreDeletedUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const user = await userModel
         .findByIdAndUpdate(id, { isDeleted: false }, { new: true })
-        .select('-password');
+        .select('username email role isBanned isDeleted createdAt');
     if (!user) {
         return next(new AppError('User not found', 404));
     }
-    return new AppResponse(200, 'User restored successfully', { user }).send(res);
+    return new AppResponse(200, 'User restored successfully', { user }).send(
+        res
+    );
 });
 
 const viewUserOrders = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const orders = await orderModel.find({ user: id });
+    const orders = await orderModel
+        .find({ user: id })
+        .select('items totalAmount status paymentStatus createdAt')
+        .populate('user', 'username email')
+        .populate('items.product', 'name imagesUrls');
     if (!orders || orders.length === 0) {
         return next(new AppError('Orders not found', 404));
     }
-    return new AppResponse(200, 'User orders fetched successfully', { orders }).send(res);
+    return new AppResponse(200, 'User orders fetched successfully', {
+        orders,
+    }).send(res);
 });
-
 
 export {
     listUsers,

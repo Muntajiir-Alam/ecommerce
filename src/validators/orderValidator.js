@@ -9,9 +9,6 @@ const orderValidationRule = [
     body('items.*.quantity')
         .isInt({ min: 1 })
         .withMessage('Quantity must be a positive integer'),
-    body('totalAmount')
-        .isFloat({ min: 0 })
-        .withMessage('Total amount must be a non-negative number'),
     validateResult,
 ];
 

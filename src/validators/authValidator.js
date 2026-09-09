@@ -14,7 +14,7 @@ const registerUserValidationRules = [
         .withMessage('Username must be a string')
         .isLength({ min: 3, max: 15 })
         .withMessage('Username must be between 3 and 15 characters'),
-    // body('email').isEmail().withMessage('Invalid email address'),
+    body('email').isEmail().withMessage('Invalid email address'),
     body('password')
         .isLength({ min: 6 })
         .withMessage('Password must be at least 6 characters long'),
@@ -27,7 +27,7 @@ const loginUserValidationRules = [
         .withMessage('Username must be a string')
         .isLength({ min: 3, max: 15 })
         .withMessage('Username must be between 3 and 15 characters'),
-    // body('email').isEmail().withMessage('Invalid email address'),
+    body('email').optional().isEmail().withMessage('Invalid email address'),
     body('password').notEmpty().withMessage('Password is required'),
     validateResult,
 ];
