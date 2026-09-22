@@ -1,29 +1,49 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-    timeout: 15000,
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    withCredentials: true, // sends the httpOnly refresh token cookie automatically
 });
 
-api.interceptors.request.use(
-    (config) => {
-        if (typeof window !== 'undefined') {
-            const token = window.localStorage.getItem('token');
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+// Attach access token to every outgoing request
+api.interceptors.request.use((config) => {
+    const accessToken = getAccessToken(); // where this lives, discussed below
 
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    return config;
+});
+
+// Handle expired access tokens automatically
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response?.status === 401 && typeof window !== 'undefined') {
-            window.localStorage.removeItem('token');
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                const refreshResponse = await axios.post(
+                    `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+                    {},
+                    { withCredentials: true }
+                );
+
+                const newAccessToken = refreshResponse.data.data.accessToken;
+                setAccessToken(newAccessToken);
+
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                return api(originalRequest); // retry the original failed request
+            } catch (refreshError) {
+                clearAccessToken();
+                window.location.href = '/login'; // force logout
+                return Promise.reject(refreshError);
+            }
         }
+
         return Promise.reject(error);
     }
 );
