@@ -1,13 +1,14 @@
 import axios from 'axios';
+import { store } from '@/store/store';
+import { setCredentials, clearCredentials } from '@/store/slices/authSlice';
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
-    withCredentials: true, // sends the httpOnly refresh token cookie automatically
+    withCredentials: true,
 });
 
-// Attach access token to every outgoing request
 api.interceptors.request.use((config) => {
-    const accessToken = getAccessToken(); // where this lives, discussed below
+    const accessToken = store.getState().auth.accessToken;
 
     if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
@@ -16,7 +17,6 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Handle expired access tokens automatically
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -32,14 +32,14 @@ api.interceptors.response.use(
                     { withCredentials: true }
                 );
 
-                const newAccessToken = refreshResponse.data.data.accessToken;
-                setAccessToken(newAccessToken);
+                const { accessToken, user } = refreshResponse.data.data;
+                store.dispatch(setCredentials({ user, accessToken }));
 
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return api(originalRequest); // retry the original failed request
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                return api(originalRequest);
             } catch (refreshError) {
-                clearAccessToken();
-                window.location.href = '/login'; // force logout
+                store.dispatch(clearCredentials());
+                window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
         }
