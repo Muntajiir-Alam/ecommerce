@@ -1,84 +1,108 @@
+// src/components/layout/Navbar.jsx
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Heart, UserCircle2, Search } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useCart } from '@/hooks/queries/useCart';
+import { useLogout } from '@/hooks/queries/useAuth';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ShoppingCart, User } from 'lucide-react';
 
 export default function Navbar() {
-    const { totalItems } = useSelector((state) => state.cart);
+    const router = useRouter();
+    const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
+    const { data: cart } = useCart();
+    const { mutate: logout } = useLogout();
+
+    const cartItemCount = cart?.items?.length || 0;
+
+    const handleLogout = () => {
+        logout(undefined, {
+            onSuccess: () => {
+                toast.success('Logged out successfully');
+                router.push('/');
+            },
+        });
+    };
 
     return (
-        <header className="border-b bg-white/90 backdrop-blur">
-            <nav className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
-                <Link href="/" className="text-xl font-bold tracking-tight">
-                    E-Commerce
+        <nav className="border-b bg-white">
+            <div className="container mx-auto flex items-center justify-between px-4 py-3">
+                <Link href="/" className="text-xl font-bold">
+                    ShopEase
                 </Link>
 
-                <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
-                    <Link
-                        href="/"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900"
-                    >
-                        Home
+                <div className="flex items-center gap-4">
+                    <Link href="/products" className="text-sm hover:underline">
+                        Products
                     </Link>
-                    <Link
-                        href="/products"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900"
-                    >
-                        Shop
-                    </Link>
-                    <Link
-                        href="/categories"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900"
-                    >
-                        Categories
-                    </Link>
+
+                    {isAuthenticated && (
+                        <Link href="/cart" className="relative">
+                            <ShoppingCart className="h-5 w-5" />
+                            {cartItemCount > 0 && (
+                                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                                    {cartItemCount}
+                                </span>
+                            )}
+                        </Link>
+                    )}
+
+                    {isLoading ? null : isAuthenticated ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <User className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link href="/profile">Profile</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/orders">My Orders</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/wishlist">Wishlist</Link>
+                                </DropdownMenuItem>
+
+                                {user?.role === 'seller' && (
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/seller/dashboard">Seller Dashboard</Link>
+                                    </DropdownMenuItem>
+                                )}
+
+                                {user?.role === 'admin' && (
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/admin/dashboard">Admin Dashboard</Link>
+                                    </DropdownMenuItem>
+                                )}
+
+                                <DropdownMenuItem onClick={handleLogout}>
+                                    Logout
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Link href="/login">
+                                <Button variant="ghost" size="sm">Login</Button>
+                            </Link>
+                            <Link href="/register">
+                                <Button size="sm">Sign up</Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="hidden items-center gap-2 rounded-full border bg-gray-50 px-3 py-2 md:flex">
-                        <Search className="h-4 w-4 text-gray-500" />
-                        <input
-                            aria-label="Search products"
-                            placeholder="Search"
-                            className="w-32 border-0 bg-transparent text-sm outline-none"
-                        />
-                    </div>
-
-                    <Link
-                        href="/wishlist"
-                        className="relative p-2 text-gray-700 hover:text-gray-900"
-                    >
-                        <Heart className="h-5 w-5" />
-                    </Link>
-
-                    <Link
-                        href="/cart"
-                        className="relative p-2 text-gray-700 hover:text-gray-900"
-                    >
-                        <ShoppingCart className="h-5 w-5" />
-                        {totalItems > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
-                                {totalItems}
-                            </span>
-                        )}
-                    </Link>
-
-                    <Link
-                        href="/profile"
-                        className="p-2 text-gray-700 hover:text-gray-900"
-                    >
-                        <UserCircle2 className="h-5 w-5" />
-                    </Link>
-
-                    <Link
-                        href="/login"
-                        className="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-                    >
-                        Login
-                    </Link>
-                </div>
-            </nav>
-        </header>
+            </div>
+        </nav>
     );
 }

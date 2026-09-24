@@ -1,7 +1,9 @@
+import Navbar from '@/components/layout/Navbar';
 import ReduxProvider from '@/providers/ReduxProvider';
 import QueryProvider from '@/providers/QueryProvider';
 import AuthInitializer from '@/components/auth/AuthInitializer';
 import { Toaster } from '@/components/ui/sonner';
+
 import './globals.css';
 
 export default function RootLayout({ children }) {
@@ -11,7 +13,10 @@ export default function RootLayout({ children }) {
                 <Toaster />
                 <ReduxProvider>
                     <QueryProvider>
-                        <AuthInitializer>{children}</AuthInitializer>
+                        <AuthInitializer>
+                            <Navbar />
+                            {children}
+                        </AuthInitializer>
                     </QueryProvider>
                 </ReduxProvider>
             </body>
