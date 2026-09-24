@@ -1,33 +1,28 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/axios';
+
 export default function ReviewList({ productId }) {
-    const reviews = [
-        {
-            id: 1,
-            author: 'Alice',
-            rating: 5,
-            comment: 'Excellent quality and fast shipping.',
+    const { data: reviews, isLoading } = useQuery({
+        queryKey: ['reviews', productId],
+        queryFn: async () => {
+            const response = await api.get(`/reviews/product/${productId}`);
+            return response.data.data;
         },
-        {
-            id: 2,
-            author: 'Sam',
-            rating: 4,
-            comment: 'Looks great and works as expected.',
-        },
-    ];
+    });
+
+    if (isLoading) return null;
 
     return (
         <div className="space-y-4">
-            {reviews.map((review) => (
-                <div
-                    key={review.id}
-                    className="rounded-lg border bg-white p-4 shadow-sm"
-                >
-                    <div className="mb-2 flex items-center justify-between">
-                        <h4 className="font-semibold">{review.author}</h4>
-                        <span className="text-yellow-500">
-                            {'★'.repeat(review.rating)}
-                        </span>
-                    </div>
-                    <p className="text-gray-600">{review.comment}</p>
+            <h2 className="text-xl font-semibold">Reviews</h2>
+            {reviews?.length === 0 && <p className="text-gray-500">No reviews yet</p>}
+            {reviews?.map((review) => (
+                <div key={review._id} className="border-b pb-3">
+                    <p className="font-medium">{review.user?.name}</p>
+                    <p className="text-sm text-yellow-600">★ {review.rating}</p>
+                    <p className="text-gray-700">{review.comment}</p>
                 </div>
             ))}
         </div>
