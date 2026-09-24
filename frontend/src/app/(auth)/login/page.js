@@ -1,15 +1,10 @@
 import LoginForm from '@/components/auth/LoginForm';
 
-export const metadata = {
-    title: 'Login | Ecommerce',
-    description: 'Login to your account',
-};
-
 export default function LoginPage() {
     return (
-        <div className="container mx-auto py-12">
-            <div className="mx-auto max-w-md">
-                <h1 className="mb-6 text-2xl font-bold">Login</h1>
+        <div className="flex min-h-screen items-center justify-center">
+            <div className="w-full max-w-sm space-y-6">
+                <h1 className="text-2xl font-bold text-center">Login</h1>
                 <LoginForm />
             </div>
         </div>

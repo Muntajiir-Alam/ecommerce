@@ -1,74 +1,61 @@
+// src/components/auth/LoginForm.jsx
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { loginSchema } from '@/lib/schemas/authSchemas';
+import { useLogin } from '@/hooks/queries/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function LoginForm() {
-    const [form, setForm] = useState({ email: '', password: '' });
+    const router = useRouter();
+    const { mutate: login, isPending } = useLogin();
 
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setForm((current) => ({ ...current, [name]: value }));
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm({
+        resolver: zodResolver(loginSchema),
+    });
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        console.log('Login payload', form);
+    const onSubmit = (formData) => {
+        login(formData, {
+            onSuccess: () => {
+                toast.success('Logged in successfully');
+                router.push('/');
+            },
+            onError: (error) => {
+                toast.error(error.response?.data?.message || 'Login failed');
+            },
+        });
     };
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="space-y-4 rounded-lg border bg-white p-6 shadow-sm"
-        >
-            <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+                <Label htmlFor="username">Username or Email</Label>
+                <Input id="username" {...register('username')} />
+                {errors.username && (
+                    <p className="text-sm text-red-500">{errors.username.message}</p>
+                )}
             </div>
 
-            <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link
-                        href="/forgot-password"
-                        className="text-xs text-blue-600 hover:underline"
-                    >
-                        Forgot password?
-                    </Link>
-                </div>
-                <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                />
+            <div>
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" {...register('password')} />
+                {errors.password && (
+                    <p className="text-sm text-red-500">{errors.password.message}</p>
+                )}
             </div>
 
-            <Button type="submit" className="w-full">
-                Login
+            <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? 'Logging in...' : 'Login'}
             </Button>
-
-            <p className="text-center text-sm text-gray-600">
-                Don&apos;t have an account?{' '}
-                <Link
-                    href="/register"
-                    className="font-medium text-blue-600 hover:underline"
-                >
-                    Register here
-                </Link>
-            </p>
         </form>
     );
 }
