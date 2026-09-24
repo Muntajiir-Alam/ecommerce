@@ -1,45 +1,37 @@
 import Link from 'next/link';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-export default function ProductCard({ product = {} }) {
-    const {
-        id = 1,
-        name = 'Sample Product',
-        price = 29.99,
-        image = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-        category = 'General',
-    } = product;
-
+export default function ProductCard({ product }) {
     return (
-        <Card className="overflow-hidden">
-            <div className="aspect-4/5 overflow-hidden bg-gray-100">
-                <img
-                    src={image}
-                    alt={name}
-                    className="h-full w-full object-cover transition hover:scale-105"
-                />
-            </div>
-            <CardContent className="space-y-2 pt-4">
-                <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                    {category}
-                </p>
-                <Link
-                    href={`/products/${id}`}
-                    className="block text-lg font-semibold hover:text-blue-600"
-                >
-                    {name}
-                </Link>
-                <p className="text-xl font-bold text-gray-900">
-                    ${price.toFixed(2)}
-                </p>
-            </CardContent>
-            <CardFooter className="flex items-center justify-between gap-3">
-                <Button variant="outline" size="sm">
-                    Wishlist
-                </Button>
-                <Button size="sm">Add to cart</Button>
-            </CardFooter>
-        </Card>
+        <Link href={`/products/${product._id}`}>
+            <Card className="h-full transition hover:shadow-md">
+                <CardContent className="p-4">
+                    <div className="mb-3 aspect-square overflow-hidden rounded-md bg-gray-100">
+                        {product.imagesUrls?.[0] ? (
+                            <img
+                                src={product.imagesUrls[0]}
+                                alt={product.name}
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-full items-center justify-center text-gray-400">
+                                No image
+                            </div>
+                        )}
+                    </div>
+                    <h3 className="font-medium">{product.name}</h3>
+                    <p className="text-sm text-gray-500">
+                        {product.category?.name}
+                    </p>
+                </CardContent>
+                <CardFooter className="flex items-center justify-between p-4 pt-0">
+                    <span className="font-semibold">₹{product.price}</span>
+                    {product.averageRating > 0 && (
+                        <Badge variant="secondary">★ {product.averageRating}</Badge>
+                    )}
+                </CardFooter>
+            </Card>
+        </Link>
     );
 }
